@@ -1,0 +1,687 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>XSpaceFinance — Structured growth. Transparent returns.</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: 'Inter', sans-serif; background: #0f172a; color: #f8fafc; }
+    .font-display { font-family: 'Inter', sans-serif; }
+    
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(8px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    @keyframes fadeOut {
+      from { opacity: 1; transform: translateY(0); }
+      to { opacity: 0; transform: translateY(-8px); }
+    }
+    @keyframes slideUp {
+      from { opacity: 0; transform: translateY(30px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.5; }
+    }
+    @keyframes float {
+      0%, 100% { transform: translateY(0px); }
+      50% { transform: translateY(-8px); }
+    }
+    @keyframes shimmer {
+      0% { background-position: -200% 0; }
+      100% { background-position: 200% 0; }
+    }
+    @keyframes numberChange {
+      0% { opacity: 0.5; transform: scale(0.98); }
+      100% { opacity: 1; transform: scale(1); }
+    }
+    .animate-fade-in { animation: fadeIn 0.6s ease-out forwards; }
+    .animate-slide-up { animation: slideUp 0.6s ease-out forwards; }
+    .animate-pulse-slow { animation: pulse 2s ease-in-out infinite; }
+    .animate-float { animation: float 4s ease-in-out infinite; }
+    .shimmer { background: linear-gradient(90deg, transparent, rgba(255,255,255,0.08), transparent); background-size: 200% 100%; animation: shimmer 2s infinite; }
+    .number-update { animation: numberChange 0.3s ease-out; }
+    
+    .phone-screen {
+      background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+    }
+    .screen {
+      transition: opacity 0.5s ease-in-out;
+    }
+    .progress-bar-fill {
+      transition: width 0.5s ease;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Navbar -->
+  <nav class="sticky top-0 z-50 w-full border-b border-slate-800 bg-slate-950/80 backdrop-blur-md">
+    <div class="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6">
+      <div class="flex items-center gap-8">
+        <a class="font-display text-xl font-extrabold tracking-tight uppercase text-white" href="/">XSpace<span class="text-blue-600">Finance</span></a>
+        <nav class="hidden md:flex items-center gap-6">
+          <a class="text-sm font-medium text-slate-400 hover:text-white transition" href="/">Home</a>
+          <a href="/about" class="text-sm font-medium text-slate-400 hover:text-white transition">About</a>
+          <a href="/plans" class="text-sm font-medium text-slate-400 hover:text-white transition">Plans</a>
+          <a href="/calculator" class="text-sm font-medium text-slate-400 hover:text-white transition">Calculator</a>
+        </nav>
+      </div>
+      <div class="flex items-center gap-3">
+        <a href="/signin" class="text-sm font-medium text-slate-400 hover:text-blue-600 transition hidden sm:inline">Sign In</a>
+        <a href="/register" class="px-4 py-2 bg-blue-600 text-white text-sm font-semibold rounded-md hover:bg-blue-700 transition">Get Started</a>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Hero Section with Animated Phone -->
+  <section class="relative pt-20 pb-24 overflow-hidden">
+    <div class="mx-auto max-w-7xl px-4 sm:px-6">
+      <div class="grid lg:grid-cols-2 gap-12 items-center">
+        <div class="animate-slide-up">
+          <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-500/10 border border-blue-500/20 mb-6">
+            <span class="flex h-2 w-2 rounded-full bg-blue-500 animate-pulse"></span>
+            <span class="text-xs font-mono font-medium text-blue-500 uppercase tracking-wider">Live in US, UK & Canada</span>
+          </div>
+          <h1 class="font-display text-5xl lg:text-7xl font-extrabold tracking-tight leading-[1.05] mb-6">Structured growth.<br/>Transparent returns.</h1>
+          <p class="text-lg text-slate-400 max-w-[50ch] mb-10">Fixed-duration investment plans with clearly stated compound returns. Designed for individual investors who value clarity over complexity.</p>
+          <div class="flex flex-wrap gap-3">
+            <a href="/register" class="px-7 py-3.5 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 transition shadow-lg shadow-blue-600/20 inline-flex items-center gap-2">Start Investing
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+            </a>
+            <a href="/plans" class="px-7 py-3.5 bg-slate-800 border border-slate-700 text-white font-semibold rounded-lg hover:bg-slate-700 transition">View Investment Plans</a>
+          </div>
+          <div class="mt-10 flex flex-wrap items-center gap-x-8 gap-y-3 text-xs font-mono text-slate-500">
+            <span class="inline-flex items-center gap-1"><svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="text-green-500"><path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"/><path d="m9 12 2 2 4-4"/></svg> 256-bit encryption</span>
+            <span class="inline-flex items-center gap-1"><svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="text-green-500"><path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"/><path d="m9 12 2 2 4-4"/></svg> Serving US, UK & Canada</span>
+            <span class="inline-flex items-center gap-1"><svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="text-green-500"><path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"/><path d="m9 12 2 2 4-4"/></svg> Transparent ROI formula</span>
+          </div>
+        </div>
+
+        <!-- Animated Phone Mockup -->
+        <div class="relative animate-float">
+          <div class="relative mx-auto w-[300px] h-[600px] rounded-[3rem] border-[10px] border-slate-800 bg-slate-900 shadow-2xl overflow-hidden">
+            <div class="absolute top-2 left-1/2 -translate-x-1/2 w-32 h-6 bg-slate-900 rounded-b-2xl z-20"></div>
+            
+            <div class="absolute inset-0 phone-screen overflow-hidden">
+              
+              <!-- Screen 1: Dashboard Home -->
+              <div id="screen1" class="screen absolute inset-0 flex flex-col" style="opacity: 1;">
+                <div class="px-5 pt-10 pb-2 flex items-center justify-between shrink-0">
+                  <span class="text-[10px] font-mono text-white">9:41</span>
+                  <div class="flex items-center gap-1">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="text-white"><circle cx="12" cy="12" r="10"/><path d="M12 8v4l3 3"/></svg>
+                    <span class="text-[10px] font-mono text-white">100%</span>
+                  </div>
+                </div>
+                <div class="flex-1 overflow-y-auto px-5 pb-4">
+                  <div class="flex items-center justify-between mb-4">
+                    <span class="font-display text-sm font-extrabold text-white">XSpaceFinance</span>
+                    <div class="size-7 rounded-full bg-slate-800 grid place-items-center">
+                      <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="text-white"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                    </div>
+                  </div>
+                  <p class="text-[10px] text-slate-500 font-medium mb-1">Portfolio Balance</p>
+                  <p class="font-display text-3xl font-extrabold text-white tabular-nums" id="balanceValue">$24,883.60</p>
+                  <span class="inline-block mt-1 text-[10px] font-bold text-green-500" id="balancePercent">+12.4% this month</span>
+                  <div class="mt-4 h-14 bg-gradient-to-tr from-blue-500/10 to-green-500/10 rounded-lg relative overflow-hidden">
+                    <svg viewBox="0 0 100 40" class="w-full h-full" preserveAspectRatio="none">
+                      <path d="M0,35 Q25,25 50,18 T100,8" fill="none" stroke="#3b82f6" stroke-width="1.5" id="chartLine"/>
+                    </svg>
+                  </div>
+                  <p class="mt-3 text-[10px] font-mono font-bold text-slate-500 uppercase tracking-wider">Active Investments</p>
+                  <div class="mt-2 space-y-2">
+                    <div class="p-2.5 rounded-lg border border-slate-800">
+                      <div class="flex justify-between items-center"><span class="text-xs font-semibold text-white">Growth Fund III</span><span class="text-xs font-bold text-green-500" id="inv1Amount">+$3,649</span></div>
+                      <div class="mt-1 w-full h-1 bg-slate-800 rounded-full overflow-hidden"><div class="h-full bg-blue-600 rounded-full progress-bar-fill" id="inv1Progress" style="width:66%"></div></div>
+                      <p class="text-[9px] text-slate-500 mt-1 font-mono">$10,000 invested · 24/36 mo</p>
+                    </div>
+                    <div class="p-2.5 rounded-lg border border-slate-800">
+                      <div class="flex justify-between items-center"><span class="text-xs font-semibold text-white">Starter Plan</span><span class="text-xs font-bold text-green-500" id="inv2Amount">+$683</span></div>
+                      <div class="mt-1 w-full h-1 bg-slate-800 rounded-full overflow-hidden"><div class="h-full bg-blue-600 rounded-full progress-bar-fill" id="inv2Progress" style="width:33%"></div></div>
+                      <p class="text-[9px] text-slate-500 mt-1 font-mono">$3,000 invested · 4/12 mo</p>
+                    </div>
+                  </div>
+                  <p class="mt-3 text-[10px] font-mono font-bold text-slate-500 uppercase tracking-wider">Recent Activity</p>
+                  <div class="mt-1.5 space-y-1 text-[10px]">
+                    <div class="flex justify-between"><span class="text-slate-500">Daily return credited</span><span class="font-bold text-green-500" id="dailyReturn">+$9.70</span></div>
+                    <div class="flex justify-between"><span class="text-slate-500">Deposit confirmed</span><span class="font-bold text-white">$3,000</span></div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Screen 2: Select Plan -->
+              <div id="screen2" class="screen absolute inset-0 flex flex-col" style="opacity: 0;">
+                <div class="px-5 pt-10 pb-2 flex items-center justify-between shrink-0">
+                  <span class="text-[10px] font-mono text-white">9:41</span>
+                  <div class="flex items-center gap-1">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="text-white"><circle cx="12" cy="12" r="10"/><path d="M12 8v4l3 3"/></svg>
+                    <span class="text-[10px] font-mono text-white">100%</span>
+                  </div>
+                </div>
+                <div class="flex-1 overflow-y-auto px-5 pb-4">
+                  <div class="flex items-center justify-between mb-4">
+                    <span class="font-display text-sm font-extrabold text-white">Select Plan</span>
+                    <div class="size-7 rounded-full bg-slate-800 grid place-items-center">
+                      <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="text-white"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                    </div>
+                  </div>
+                  <div class="space-y-3">
+                    <div class="p-3 rounded-xl border-2 border-blue-500 bg-blue-500/10">
+                      <div class="flex justify-between items-start"><div><p class="font-bold text-white">Starter Plan</p><p class="text-xs text-slate-400">12 months · Compounding</p></div><span class="text-xs text-blue-400">Selected</span></div>
+                      <p class="text-2xl font-bold text-blue-400 mt-2">2.0%<span class="text-sm text-slate-400">/mo</span></p>
+                      <p class="text-xs text-slate-500 mt-1">$1,000 – $10,000</p>
+                    </div>
+                    <div class="p-3 rounded-xl border border-slate-700">
+                      <div><p class="font-bold text-white">Growth Fund</p><p class="text-xs text-slate-400">24 months · Compounding</p></div>
+                      <p class="text-2xl font-bold text-blue-400 mt-2">3.5%<span class="text-sm text-slate-400">/mo</span></p>
+                      <p class="text-xs text-slate-500 mt-1">$5,000 – $50,000</p>
+                    </div>
+                    <div class="p-3 rounded-xl border border-slate-700">
+                      <div><p class="font-bold text-white">Premium Fund</p><p class="text-xs text-slate-400">36 months · Compounding</p></div>
+                      <p class="text-2xl font-bold text-blue-400 mt-2">5.0%<span class="text-sm text-slate-400">/mo</span></p>
+                      <p class="text-xs text-slate-500 mt-1">$10,000 – $100,000</p>
+                    </div>
+                  </div>
+                  <div class="mt-4 pt-3 border-t border-slate-800">
+                    <p class="text-xs text-slate-500 mb-2">Investment Amount</p>
+                    <p class="text-2xl font-bold text-white">$5,000</p>
+                    <button class="w-full mt-4 py-2.5 bg-blue-600 rounded-lg text-sm font-semibold">Activate Investment</button>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Screen 3: Deposit Funds -->
+              <div id="screen3" class="screen absolute inset-0 flex flex-col" style="opacity: 0;">
+                <div class="px-5 pt-10 pb-2 flex items-center justify-between shrink-0">
+                  <span class="text-[10px] font-mono text-white">9:41</span>
+                  <div class="flex items-center gap-1">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="text-white"><circle cx="12" cy="12" r="10"/><path d="M12 8v4l3 3"/></svg>
+                    <span class="text-[10px] font-mono text-white">100%</span>
+                  </div>
+                </div>
+                <div class="flex-1 overflow-y-auto px-5 pb-4">
+                  <div class="flex items-center justify-between mb-4">
+                    <span class="font-display text-sm font-extrabold text-white">Deposit Funds</span>
+                    <div class="size-7 rounded-full bg-slate-800 grid place-items-center">
+                      <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="text-white"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                    </div>
+                  </div>
+                  <p class="text-xs text-slate-500 mb-2">Amount</p>
+                  <p class="text-4xl font-bold text-white mb-4">$5,000</p>
+                  <p class="text-xs text-slate-500 mb-2">Payment Method</p>
+                  <div class="p-3 rounded-xl border border-slate-700 mb-4">
+                    <div class="flex items-center gap-3">
+                      <div class="w-8 h-8 rounded-full flex items-center justify-center">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="20" height="20">
+                          <path fill="#F7931A" d="M16,2A14,14,0,1,0,30,16,14,14,0,0,0,16,2Z"/>
+                          <path fill="#FFF" d="M21.93,13.63a3.56,3.56,0,0,0-2.47-2.06,3.56,3.56,0,0,0-2.47-2.06l-.22-1.1-1.07.28.21,1.08a3.56,3.56,0,0,0-2.47-2.06l-.22-1.1-1.07.28.21,1.08-2.38.61.44,2.27,1.92-.49-.44-2.27,2.38-.61.22,1.1a3.56,3.56,0,0,0,2.47,2.06,3.56,3.56,0,0,0,2.47,2.06l.22,1.1,1.07-.28-.21-1.08a3.56,3.56,0,0,0,2.47-2.06l.22,1.1,1.07-.28Z"/>
+                        </svg>
+                      </div>
+                      <div><p class="font-bold text-white">Bitcoin</p><p class="text-xs text-slate-500">Network: BTC</p></div>
+                    </div>
+                  </div>
+                  <button class="w-full py-3 bg-blue-600 rounded-lg text-sm font-semibold mb-4">Confirm Deposit</button>
+                  <div class="p-3 rounded-xl bg-green-500/10 border border-green-500/20 text-center">
+                    <p class="text-green-400 font-semibold text-sm">Deposit Submitted</p>
+                    <p class="text-xs text-slate-400 mt-1">$5,000 via Bitcoin</p>
+                    <p class="text-xs text-slate-500 mt-1">Under review by operations team</p>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Screen 4: Withdrawal Matured -->
+              <div id="screen4" class="screen absolute inset-0 flex flex-col" style="opacity: 0;">
+                <div class="px-5 pt-10 pb-2 flex items-center justify-between shrink-0">
+                  <span class="text-[10px] font-mono text-white">9:41</span>
+                  <div class="flex items-center gap-1">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="text-white"><circle cx="12" cy="12" r="10"/><path d="M12 8v4l3 3"/></svg>
+                    <span class="text-[10px] font-mono text-white">100%</span>
+                  </div>
+                </div>
+                <div class="flex-1 overflow-y-auto px-5 pb-4">
+                  <div class="flex items-center justify-between mb-2">
+                    <span class="font-display text-sm font-extrabold text-white">Withdrawal</span>
+                    <div class="size-7 rounded-full bg-slate-800 grid place-items-center">
+                      <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="text-white"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                    </div>
+                  </div>
+                  <span class="inline-block px-2 py-0.5 bg-green-500/20 text-green-400 text-[10px] rounded mb-3">Matured</span>
+                  <p class="text-xs text-slate-500">Investment Matured</p>
+                  <p class="text-3xl font-bold text-white mt-1">$14,280.00</p>
+                  <p class="text-sm text-green-500 mt-1">+$4,280 profit (+42.8%)</p>
+                  <div class="grid grid-cols-2 gap-3 mt-4 p-3 bg-slate-800/50 rounded-xl">
+                    <div><p class="text-[10px] text-slate-500">Principal</p><p class="font-bold text-white">$10,000.00</p></div>
+                    <div><p class="text-[10px] text-slate-500">Compound Returns</p><p class="font-bold text-green-500">+$4,280.00</p></div>
+                  </div>
+                  <div class="mt-3 p-3 bg-slate-800/50 rounded-xl">
+                    <p class="text-[10px] text-slate-500">Total Withdrawn</p>
+                    <p class="text-2xl font-bold text-white">$14,280.00</p>
+                  </div>
+                  <div class="mt-3 p-3 rounded-xl border border-slate-700">
+                    <p class="text-xs text-slate-500 mb-1">Withdraw to</p>
+                    <div class="flex items-center gap-2">
+                      <div class="w-6 h-6 rounded-full flex items-center justify-center">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="14" height="14">
+                          <path fill="#F7931A" d="M16,2A14,14,0,1,0,30,16,14,14,0,0,0,16,2Z"/>
+                          <path fill="#FFF" d="M21.93,13.63a3.56,3.56,0,0,0-2.47-2.06,3.56,3.56,0,0,0-2.47-2.06l-.22-1.1-1.07.28.21,1.08a3.56,3.56,0,0,0-2.47-2.06l-.22-1.1-1.07.28.21,1.08-2.38.61.44,2.27,1.92-.49-.44-2.27,2.38-.61.22,1.1a3.56,3.56,0,0,0,2.47,2.06,3.56,3.56,0,0,0,2.47,2.06l.22,1.1,1.07-.28-.21-1.08a3.56,3.56,0,0,0,2.47-2.06l.22,1.1,1.07-.28Z"/>
+                        </svg>
+                      </div>
+                      <span class="text-sm text-white">Bitcoin Wallet</span>
+                    </div>
+                    <button class="w-full mt-3 py-2 bg-blue-600 rounded-lg text-sm font-semibold">Withdraw $14,280.00</button>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Screen 5: Investment Performance -->
+              <div id="screen5" class="screen absolute inset-0 flex flex-col" style="opacity: 0;">
+                <div class="px-5 pt-10 pb-2 flex items-center justify-between shrink-0">
+                  <span class="text-[10px] font-mono text-white">9:41</span>
+                  <div class="flex items-center gap-1">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="text-white"><circle cx="12" cy="12" r="10"/><path d="M12 8v4l3 3"/></svg>
+                    <span class="text-[10px] font-mono text-white">100%</span>
+                  </div>
+                </div>
+                <div class="flex-1 overflow-y-auto px-5 pb-4">
+                  <div class="flex items-center justify-between mb-4">
+                    <span class="font-display text-sm font-extrabold text-white">Investment Performance</span>
+                    <div class="size-7 rounded-full bg-slate-800 grid place-items-center">
+                      <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="text-white"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                    </div>
+                  </div>
+                  <p class="text-lg font-bold text-white">Growth Fund</p>
+                  <div class="grid grid-cols-2 gap-3 mt-2">
+                    <div class="p-2 bg-slate-800/50 rounded-lg"><p class="text-[9px] text-slate-500">Invested</p><p class="font-bold text-white">$5,000</p></div>
+                    <div class="p-2 bg-slate-800/50 rounded-lg"><p class="text-[9px] text-slate-500">Current Value</p><p class="font-bold text-green-500" id="currentValue">$6,420</p></div>
+                  </div>
+                  <p class="text-xs font-semibold text-white mt-4 mb-2">Monthly Returns</p>
+                  <div class="space-y-1">
+                    <div class="flex justify-between text-sm"><span class="text-slate-400">Month 1</span><span class="text-green-500" id="month1">+$175</span></div>
+                    <div class="flex justify-between text-sm"><span class="text-slate-400">Month 2</span><span class="text-green-500" id="month2">+$181</span></div>
+                    <div class="flex justify-between text-sm"><span class="text-slate-400">Month 3</span><span class="text-green-500" id="month3">+$187</span></div>
+                    <div class="flex justify-between text-sm"><span class="text-slate-400">Month 4</span><span class="text-green-500" id="month4">+$194</span></div>
+                    <div class="flex justify-between text-sm"><span class="text-slate-400">Month 5</span><span class="text-green-500" id="month5">+$201</span></div>
+                    <div class="flex justify-between text-sm"><span class="text-slate-400">Month 6</span><span class="text-green-500" id="month6">+$208</span></div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Bottom Navigation -->
+              <div class="absolute bottom-0 left-0 right-0 shrink-0 border-t border-slate-800 bg-slate-950/95 px-4 py-2 flex items-center justify-between z-10">
+                <div class="flex flex-col items-center gap-0.5 cursor-pointer group" onclick="showScreen(1)">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="group-hover:text-blue-500 transition text-blue-500"><path d="M15 21v-8a1 1 0 0 0-1-1h-4a1 1 0 0 0-1 1v8"/><path d="M3 10a2 2 0 0 1 .709-1.528l7-6a2 2 0 0 1 2.582 0l7 6A2 2 0 0 1 21 10v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>
+                  <span class="text-[8px] font-medium text-blue-500">Home</span>
+                </div>
+                <div class="flex flex-col items-center gap-0.5 cursor-pointer group" onclick="showScreen(2)">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="group-hover:text-blue-500 transition text-slate-500"><rect width="7" height="7" x="3" y="3" rx="1"/><rect width="7" height="7" x="14" y="3" rx="1"/><rect width="7" height="7" x="14" y="14" rx="1"/><rect width="7" height="7" x="3" y="14" rx="1"/></svg>
+                  <span class="text-[8px] font-medium text-slate-500 group-hover:text-blue-500">Plans</span>
+                </div>
+                <div class="flex flex-col items-center gap-0.5 cursor-pointer group" onclick="showScreen(3)">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="group-hover:text-blue-500 transition text-slate-500"><path d="M19 7V4a1 1 0 0 0-1-1H5a2 2 0 0 0 0 4h15a1 1 0 0 1 1 1v4h-3a2 2 0 0 0 0 4h3a1 1 0 0 0 1-1v-2a1 1 0 0 0-1-1"/><path d="M3 5v14a2 2 0 0 0 2 2h15a1 1 0 0 0 1-1v-4"/></svg>
+                  <span class="text-[8px] font-medium text-slate-500 group-hover:text-blue-500">Wallet</span>
+                </div>
+                <div class="flex flex-col items-center gap-0.5 cursor-pointer group" onclick="showScreen(4)">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="group-hover:text-blue-500 transition text-slate-500"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                  <span class="text-[8px] font-medium text-slate-500 group-hover:text-blue-500">Profile</span>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="absolute -top-12 -right-12 size-72 bg-blue-500/10 rounded-full blur-3xl -z-10 animate-pulse-slow"></div>
+          <div class="absolute -bottom-12 -left-12 size-72 bg-green-500/10 rounded-full blur-3xl -z-10"></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Feature Pillars - WHITE BACKGROUND -->
+  <section class="py-20 bg-white border-y border-slate-200">
+    <div class="mx-auto max-w-7xl px-4 sm:px-6 grid md:grid-cols-4 gap-8">
+      <div class="space-y-3">
+        <div class="size-10 grid place-items-center rounded-md bg-slate-100 border border-slate-200 text-blue-600">
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"/><path d="m9 12 2 2 4-4"/></svg>
+        </div>
+        <h3 class="font-display font-bold text-base text-slate-900">Secure Infrastructure</h3>
+        <p class="text-sm text-slate-600 leading-relaxed">256-bit SSL encryption across every connection. Credentials and financial information protected at every layer.</p>
+      </div>
+      <div class="space-y-3">
+        <div class="size-10 grid place-items-center rounded-md bg-slate-100 border border-slate-200 text-blue-600">
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3v16a2 2 0 0 0 2 2h16"/><path d="M18 17V9"/><path d="M13 17V5"/><path d="M8 17v-3"/></svg>
+        </div>
+        <h3 class="font-display font-bold text-base text-slate-900">Transparent ROI Structure</h3>
+        <p class="text-sm text-slate-600 leading-relaxed">Every plan publishes its exact return rate, duration, and compounding method. No hidden charges, no ambiguous terms.</p>
+      </div>
+      <div class="space-y-3">
+        <div class="size-10 grid place-items-center rounded-md bg-slate-100 border border-slate-200 text-blue-600">
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3.85 8.62a4 4 0 0 1 4.78-4.77 4 4 0 0 1 6.74 0 4 4 0 0 1 4.78 4.78 4 4 0 0 1 0 6.74 4 4 0 0 1-4.77 4.78 4 4 0 0 1-6.75 0 4 4 0 0 1-4.78-4.77 4 4 0 0 1 0-6.76Z"/><path d="m9 12 2 2 4-4"/></svg>
+        </div>
+        <h3 class="font-display font-bold text-base text-slate-900">Manually Verified Deposits</h3>
+        <p class="text-sm text-slate-600 leading-relaxed">Every incoming deposit is reviewed and confirmed by our operations team before funds reach your account.</p>
+      </div>
+      <div class="space-y-3">
+        <div class="size-10 grid place-items-center rounded-md bg-slate-100 border border-slate-200 text-blue-600">
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21.54 15H17a2 2 0 0 0-2 2v4.54"/><path d="M7 3.34V5a3 3 0 0 0 3 3a2 2 0 0 1 2 2c0 1.1.9 2 2 2a2 2 0 0 0 2-2c0-1.1.9-2 2-2h3.17"/><path d="M11 21.95V18a2 2 0 0 0-2-2a2 2 0 0 1-2-2v-1a2 2 0 0 0-2-2H2.05"/><circle cx="12" cy="12" r="10"/></svg>
+        </div>
+        <h3 class="font-display font-bold text-base text-slate-900">Three Countries Supported</h3>
+        <p class="text-sm text-slate-600 leading-relaxed">Available in the US (USD), UK (GBP), and Canada (CAD). Your dashboard adapts to your local currency.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- How It Works - DARK -->
+  <section class="py-24 bg-slate-950">
+    <div class="mx-auto max-w-7xl px-4 sm:px-6">
+      <div class="max-w-2xl mb-16">
+        <p class="text-xs font-mono font-semibold text-blue-500 uppercase tracking-widest mb-3">— How it works</p>
+        <h2 class="font-display text-4xl lg:text-5xl font-extrabold tracking-tight text-white">Four steps from sign-up to structured returns.</h2>
+        <p class="text-slate-400 mt-4">No intermediaries. No complexity. A direct path from registration to compounding returns.</p>
+      </div>
+      <div class="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <div class="p-6 rounded-xl border border-slate-800 hover:border-blue-500/40 transition hover:bg-slate-900">
+          <p class="font-mono text-xs font-bold text-blue-500">01</p>
+          <h3 class="font-display text-lg font-bold mt-3 mb-2 text-white">Create your account</h3>
+          <p class="text-sm text-slate-400 leading-relaxed">Register with your name, email, and country. Your dashboard automatically configures for your region and currency.</p>
+        </div>
+        <div class="p-6 rounded-xl border border-slate-800 hover:border-blue-500/40 transition hover:bg-slate-900">
+          <p class="font-mono text-xs font-bold text-blue-500">02</p>
+          <h3 class="font-display text-lg font-bold mt-3 mb-2 text-white">Fund your wallet</h3>
+          <p class="text-sm text-slate-400 leading-relaxed">Deposit via cryptocurrency. Every deposit is manually reviewed and confirmed by our operations team.</p>
+        </div>
+        <div class="p-6 rounded-xl border border-slate-800 hover:border-blue-500/40 transition hover:bg-slate-900">
+          <p class="font-mono text-xs font-bold text-blue-500">03</p>
+          <h3 class="font-display text-lg font-bold mt-3 mb-2 text-white">Select a plan</h3>
+          <p class="text-sm text-slate-400 leading-relaxed">Choose by duration and rate. Longer commitments earn higher rates. All plan terms are stated upfront.</p>
+        </div>
+        <div class="p-6 rounded-xl border border-slate-800 hover:border-blue-500/40 transition hover:bg-slate-900">
+          <p class="font-mono text-xs font-bold text-blue-500">04</p>
+          <h3 class="font-display text-lg font-bold mt-3 mb-2 text-white">Earn compounding returns</h3>
+          <p class="text-sm text-slate-400 leading-relaxed">Returns are calculated monthly using compound interest. Withdraw your principal and earnings at maturity.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Investment Plans Section - DARK -->
+  <section class="py-24 bg-slate-900 border-y border-slate-800">
+    <div class="mx-auto max-w-7xl px-4 sm:px-6">
+      <div class="flex flex-col md:flex-row md:items-end justify-between mb-12 gap-4">
+        <div class="max-w-xl">
+          <p class="text-xs font-mono font-semibold text-blue-500 uppercase tracking-widest mb-3">— Investment plans</p>
+          <h2 class="font-display text-4xl font-extrabold tracking-tight text-white">Duration-based investment structure.</h2>
+          <p class="text-slate-400 mt-3">Each plan operates on a fixed duration with a stated monthly return rate. Longer commitments receive higher rates.</p>
+        </div>
+        <a href="/plans" class="text-sm font-semibold text-blue-500 inline-flex items-center gap-1 hover:text-blue-400 transition">All plans <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg></a>
+      </div>
+      <div class="grid md:grid-cols-3 gap-6">
+        <div class="bg-slate-800 border border-slate-700 rounded-xl p-6 relative">
+          <h3 class="text-xl font-bold text-white mb-2">Starter</h3>
+          <p class="text-3xl font-bold text-blue-500">2.0%<span class="text-sm text-slate-400">/month</span></p>
+          <p class="text-slate-400 text-sm mt-2">90 days · $1,000 - $10,000</p>
+          <a href="/register" class="block text-center mt-4 py-2 bg-blue-600 rounded-lg hover:bg-blue-700 transition text-white">Get Started</a>
+        </div>
+        <div class="bg-slate-800 border border-blue-500 rounded-xl p-6 relative">
+          <div class="absolute -top-3 left-1/2 -translate-x-1/2 px-3 py-1 bg-blue-600 text-white text-[10px] font-mono font-bold uppercase rounded">Popular</div>
+          <h3 class="text-xl font-bold text-white mb-2">Growth Fund</h3>
+          <p class="text-3xl font-bold text-blue-500">3.5%<span class="text-sm text-slate-400">/month</span></p>
+          <p class="text-slate-400 text-sm mt-2">180 days · $5,000 - $50,000</p>
+          <a href="/register" class="block text-center mt-4 py-2 bg-blue-600 rounded-lg hover:bg-blue-700 transition text-white">Get Started</a>
+        </div>
+        <div class="bg-slate-800 border border-slate-700 rounded-xl p-6">
+          <h3 class="text-xl font-bold text-white mb-2">Premium Fund</h3>
+          <p class="text-3xl font-bold text-blue-500">5.0%<span class="text-sm text-slate-400">/month</span></p>
+          <p class="text-slate-400 text-sm mt-2">365 days · $10,000 - $100,000</p>
+          <a href="/register" class="block text-center mt-4 py-2 bg-blue-600 rounded-lg hover:bg-blue-700 transition text-white">Get Started</a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ROI Calculator Section - WHITE BACKGROUND -->
+  <section class="py-24 bg-white">
+    <div class="mx-auto max-w-7xl px-4 sm:px-6">
+      <div class="bg-white text-slate-900 rounded-3xl p-8 lg:p-16 border border-slate-200 shadow-xl relative overflow-hidden">
+        <div class="relative z-10 grid lg:grid-cols-2 gap-12 items-center">
+          <div>
+            <p class="text-xs font-mono font-semibold text-blue-600 uppercase tracking-widest mb-3">— ROI Calculator</p>
+            <h2 class="font-display text-4xl lg:text-5xl font-extrabold tracking-tight text-slate-900 mb-6">Model your investment before you commit.</h2>
+            <p class="text-slate-600 mb-8">Project potential returns across plans and durations. The calculator uses the same compound interest formula applied to every active investment on the platform.</p>
+            <div class="font-mono text-sm bg-slate-100 border border-slate-200 rounded-lg p-4 mb-6 inline-block text-slate-700">A = P × (1 + r)<sup>n</sup></div>
+            <div><a href="/calculator" class="inline-flex items-center gap-2 px-6 py-3 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 transition">Open full calculator <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg></a></div>
+          </div>
+          <div class="bg-slate-50 text-slate-900 rounded-2xl p-7 border border-slate-200">
+            <label class="block text-xs font-mono font-bold uppercase tracking-widest text-slate-500 mb-2">Investment Amount</label>
+            <div class="flex items-baseline gap-3 mb-2"><span class="font-display text-3xl font-extrabold text-slate-900">$<span id="calcAmountDisplay">10,000</span></span></div>
+            <input type="range" id="calcAmount" min="1000" max="100000" step="500" value="10000" class="w-full accent-blue-600 mb-6">
+            <label class="block text-xs font-mono font-bold uppercase tracking-widest text-slate-500 mb-2">Select Plan</label>
+            <select id="calcPlan" class="w-full bg-white border border-slate-300 rounded-lg px-3 py-2 mb-6 text-sm font-medium text-slate-900">
+              <option value="12">Starter (12 months @ 2.0%/mo)</option>
+              <option value="24" selected>Growth (24 months @ 3.5%/mo)</option>
+              <option value="36">Premium (36 months @ 5.0%/mo)</option>
+            </select>
+            <div class="pt-6 border-t border-slate-200 space-y-2">
+              <div class="flex justify-between"><span class="text-sm text-slate-500">Projected Return</span><span class="font-display text-2xl font-extrabold text-blue-600" id="projectedReturn">$22,833.28</span></div>
+              <div class="flex justify-between"><span class="text-sm text-slate-500">Net Gain</span><span class="font-semibold text-green-600" id="netGain">+$12,833.28</span></div>
+            </div>
+          </div>
+        </div>
+        <div class="absolute top-0 right-0 size-96 bg-blue-100 rounded-full blur-[100px] -translate-y-1/2 translate-x-1/4 pointer-events-none"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Security & Transparency - DARK -->
+  <section class="py-24 bg-slate-900 border-y border-slate-800">
+    <div class="mx-auto max-w-7xl px-4 sm:px-6">
+      <div class="max-w-2xl mb-16">
+        <p class="text-xs font-mono font-semibold text-blue-500 uppercase tracking-widest mb-3">— Security & transparency</p>
+        <h2 class="font-display text-4xl lg:text-5xl font-extrabold tracking-tight text-white">Security and transparency at every level.</h2>
+        <p class="text-slate-400 mt-4">Every action on the platform is verified, recorded, and communicated. You maintain full visibility over your account.</p>
+      </div>
+      <div class="grid md:grid-cols-2 gap-6">
+        <div class="p-7 rounded-2xl bg-slate-800 border border-slate-700 flex gap-4 hover:border-blue-500 transition">
+          <div class="size-10 shrink-0 grid place-items-center rounded-md bg-blue-500/10 text-blue-500"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 10a2 2 0 0 0-2 2c0 1.02-.1 2.51-.26 4"/><path d="M14 13.12c0 2.38 0 6.38-1 8.88"/><path d="M17.29 21.02c.12-.6.43-2.3.5-3.02"/><path d="M2 12a10 10 0 0 1 18-6"/><path d="M2 16h.01"/><path d="M21.8 16c.2-2 .131-5.354 0-6"/><path d="M5 19.5C5.5 18 6 15 6 12a6 6 0 0 1 .34-2"/><path d="M8.65 22c.21-.66.45-1.32.57-2"/><path d="M9 6.8a6 6 0 0 1 9 5.2v2"/></svg></div>
+          <div><h3 class="font-display font-bold text-base text-white mb-1.5">Identity Verification (KYC)</h3><p class="text-sm text-slate-400 leading-relaxed">All users undergo identity verification before withdrawals are enabled. Accepted documents include passport, national ID, and driver's license.</p></div>
+        </div>
+        <div class="p-7 rounded-2xl bg-slate-800 border border-slate-700 flex gap-4 hover:border-blue-500 transition">
+          <div class="size-10 shrink-0 grid place-items-center rounded-md bg-blue-500/10 text-blue-500"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect width="18" height="11" x="3" y="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg></div>
+          <div><h3 class="font-display font-bold text-base text-white mb-1.5">Secure Withdrawals</h3><p class="text-sm text-slate-400 leading-relaxed">Withdrawal requests are processed within 24–48 business hours. All outgoing transfers are reviewed before execution.</p></div>
+        </div>
+        <div class="p-7 rounded-2xl bg-slate-800 border border-slate-700 flex gap-4 hover:border-blue-500 transition">
+          <div class="size-10 shrink-0 grid place-items-center rounded-md bg-blue-500/10 text-blue-500"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 22a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h8a2.4 2.4 0 0 1 1.704.706l3.588 3.588A2.4 2.4 0 0 1 20 8v12a2 2 0 0 1-2 2z"/><path d="M14 2v5a1 1 0 0 0 1 1h5"/><path d="M10 9H8"/><path d="M16 13H8"/><path d="M16 17H8"/></svg></div>
+          <div><h3 class="font-display font-bold text-base text-white mb-1.5">Audit-Grade Transaction History</h3><p class="text-sm text-slate-400 leading-relaxed">Every deposit, withdrawal, investment activation, and return credit is recorded with a unique reference code.</p></div>
+        </div>
+        <div class="p-7 rounded-2xl bg-slate-800 border border-slate-700 flex gap-4 hover:border-blue-500 transition">
+          <div class="size-10 shrink-0 grid place-items-center rounded-md bg-blue-500/10 text-blue-500"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.268 21a2 2 0 0 0 3.464 0"/><path d="M3.262 15.326A1 1 0 0 0 4 17h16a1 1 0 0 0 .74-1.673C19.41 13.956 18 12.499 18 8A6 6 0 0 0 6 8c0 4.499-1.411 5.956-2.738 7.326"/></svg></div>
+          <div><h3 class="font-display font-bold text-base text-white mb-1.5">Notifications for Every Action</h3><p class="text-sm text-slate-400 leading-relaxed">Receive email notifications for sign-ins, deposit confirmations, investment activations, withdrawal processing, KYC status updates.</p></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- CTA Section - WHITE BACKGROUND -->
+  <section class="py-24 bg-white border-t border-slate-200">
+    <div class="mx-auto max-w-3xl px-4 sm:px-6 text-center">
+      <h2 class="font-display text-4xl lg:text-5xl font-extrabold tracking-tight text-slate-900 mb-6">Open your account.</h2>
+      <p class="text-slate-600 text-lg mb-8">Create a free account in under two minutes. Explore plans, run projections in the calculator, and invest at your own pace.</p>
+      <a href="/register" class="inline-flex items-center gap-2 px-8 py-4 bg-blue-600 text-white rounded-lg font-semibold shadow-lg shadow-blue-600/20 hover:bg-blue-700 transition">Create Your Account <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg></a>
+      <p class="text-xs text-slate-500 mt-4 font-mono">Free to register · No credit card required · No minimum commitment</p>
+    </div>
+  </section>
+
+  <!-- Footer - DARK -->
+  <footer class="py-20 bg-slate-950 border-t border-slate-800">
+    <div class="mx-auto max-w-7xl px-4 sm:px-6">
+      <div class="grid md:grid-cols-4 gap-12 mb-16">
+        <div class="md:col-span-2">
+          <div class="font-display text-2xl font-extrabold tracking-tight uppercase mb-4 text-white">XSpace<span class="text-blue-500">Finance</span></div>
+          <p class="text-slate-400 max-w-sm mb-6 text-sm leading-relaxed">Fixed-duration investment plans with transparent returns. Built for individual investors across the United States, United Kingdom, and Canada.</p>
+          <div class="flex gap-2">
+            <span class="px-2 py-1 border border-slate-700 rounded text-[10px] font-bold tracking-wider text-slate-400">USA</span>
+            <span class="px-2 py-1 border border-slate-700 rounded text-[10px] font-bold tracking-wider text-slate-400">UK</span>
+            <span class="px-2 py-1 border border-slate-700 rounded text-[10px] font-bold tracking-wider text-slate-400">CAN</span>
+          </div>
+        </div>
+        <div>
+          <p class="font-display font-bold mb-5 text-white">Platform</p>
+          <ul class="space-y-3 text-sm text-slate-400">
+            <li><a href="/plans" class="hover:text-blue-500 transition">Investment Plans</a></li>
+            <li><a href="/calculator" class="hover:text-blue-500 transition">ROI Calculator</a></li>
+            <li><a href="/about" class="hover:text-blue-500 transition">Our Company</a></li>
+            <li><a href="/register" class="hover:text-blue-500 transition">Create Account</a></li>
+          </ul>
+        </div>
+        <div>
+          <p class="font-display font-bold mb-5 text-white">Legal</p>
+          <ul class="space-y-3 text-sm text-slate-400">
+            <li><a href="/privacy" class="hover:text-blue-500 transition">Privacy Policy</a></li>
+            <li><a href="/terms" class="hover:text-blue-500 transition">Terms of Service</a></li>
+            <li><a href="/risk" class="hover:text-blue-500 transition">Risk Disclosure</a></li>
+            <li><a href="/cookies" class="hover:text-blue-500 transition">Cookie Policy</a></li>
+          </ul>
+        </div>
+      </div>
+      <div class="pt-8 border-t border-slate-800 flex flex-col md:flex-row justify-between gap-4">
+        <p class="text-xs text-slate-500 font-mono">© 2026 XSpaceFinance. All rights reserved.</p>
+        <p class="text-[11px] leading-relaxed text-slate-500 max-w-2xl">All investments carry risk. Projected returns are based on stated rates and compounding schedules and are not guaranteed. Past performance does not guarantee future results.</p>
+      </div>
+    </div>
+  </footer>
+
+  <!-- Support Chat Button -->
+  <button onclick="alert('Support: support@xspacefinance.com')" class="fixed bottom-6 right-6 z-50 size-14 rounded-full bg-blue-600 text-white grid place-items-center shadow-xl shadow-blue-600/30 hover:scale-105 transition">
+    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2.992 16.342a2 2 0 0 1 .094 1.167l-1.065 3.29a1 1 0 0 0 1.236 1.168l3.413-.998a2 2 0 0 1 1.099.092 10 10 0 1 0-4.777-4.719"/></svg>
+  </button>
+
+  <script>
+    // Screen rotation
+    let currentScreen = 1;
+    const screens = {
+      1: document.getElementById('screen1'),
+      2: document.getElementById('screen2'),
+      3: document.getElementById('screen3'),
+      4: document.getElementById('screen4'),
+      5: document.getElementById('screen5')
+    };
+    
+    function showScreen(screenNum) {
+      if (currentScreen === screenNum) return;
+      if (screens[currentScreen]) screens[currentScreen].style.opacity = '0';
+      setTimeout(() => { if (screens[screenNum]) screens[screenNum].style.opacity = '1'; }, 50);
+      currentScreen = screenNum;
+    }
+    
+    let screenOrder = [1, 2, 3, 4, 5];
+    let screenIndex = 0;
+    setInterval(() => {
+      screenIndex = (screenIndex + 1) % screenOrder.length;
+      showScreen(screenOrder[screenIndex]);
+    }, 6000);
+    
+    // Animate numbers on Screen 1
+    let balanceValue = 24883.60;
+    let inv1Value = 3649;
+    let inv2Value = 683;
+    let dailyRet = 9.70;
+    let inv1Progress = 66;
+    let inv2Progress = 33;
+    let direction = 1;
+    
+    setInterval(() => {
+      const change = (Math.random() * 20 + 5) * direction;
+      balanceValue += change;
+      const balanceEl = document.getElementById('balanceValue');
+      balanceEl.classList.add('number-update');
+      balanceEl.textContent = '$' + balanceValue.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+      setTimeout(() => balanceEl.classList.remove('number-update'), 300);
+      
+      inv1Value += change * 0.3;
+      const inv1El = document.getElementById('inv1Amount');
+      inv1El.classList.add('number-update');
+      inv1El.textContent = '+$' + Math.floor(inv1Value).toLocaleString();
+      setTimeout(() => inv1El.classList.remove('number-update'), 300);
+      
+      inv2Value += change * 0.1;
+      const inv2El = document.getElementById('inv2Amount');
+      inv2El.classList.add('number-update');
+      inv2El.textContent = '+$' + Math.floor(inv2Value).toLocaleString();
+      setTimeout(() => inv2El.classList.remove('number-update'), 300);
+      
+      dailyRet += change * 0.02;
+      const dailyEl = document.getElementById('dailyReturn');
+      dailyEl.classList.add('number-update');
+      dailyEl.textContent = '+$' + dailyRet.toFixed(2);
+      setTimeout(() => dailyEl.classList.remove('number-update'), 300);
+      
+      inv1Progress += (Math.random() * 2 - 1) * 0.5;
+      inv1Progress = Math.min(95, Math.max(5, inv1Progress));
+      document.getElementById('inv1Progress').style.width = inv1Progress + '%';
+      
+      inv2Progress += (Math.random() * 2 - 1) * 0.8;
+      inv2Progress = Math.min(95, Math.max(5, inv2Progress));
+      document.getElementById('inv2Progress').style.width = inv2Progress + '%';
+      
+      const chartPath = document.getElementById('chartLine');
+      if (chartPath) chartPath.setAttribute('d', `M0,35 Q25,25 50,18 T100,${5 + Math.random() * 15}`);
+      
+      if (Math.random() < 0.1) direction *= -1;
+    }, 4000);
+    
+    // Animate monthly returns on Screen 5
+    let monthValues = [175, 181, 187, 194, 201, 208];
+    setInterval(() => {
+      for (let i = 1; i <= 6; i++) {
+        const change = (Math.random() * 10 - 5) * direction;
+        monthValues[i-1] += change;
+        monthValues[i-1] = Math.max(50, Math.min(500, monthValues[i-1]));
+        const el = document.getElementById('month' + i);
+        if (el) {
+          el.classList.add('number-update');
+          el.textContent = '+$' + Math.floor(monthValues[i-1]);
+          setTimeout(() => el.classList.remove('number-update'), 300);
+        }
+      }
+      const currentValEl = document.getElementById('currentValue');
+      if (currentValEl) {
+        const totalValue = monthValues.reduce((a,b) => a + b, 5000);
+        currentValEl.classList.add('number-update');
+        currentValEl.textContent = '$' + Math.floor(totalValue).toLocaleString();
+        setTimeout(() => currentValEl.classList.remove('number-update'), 300);
+      }
+    }, 5000);
+    
+    // Calculator functionality
+    const calcAmount = document.getElementById('calcAmount');
+    const calcPlan = document.getElementById('calcPlan');
+    const calcAmountDisplay = document.getElementById('calcAmountDisplay');
+    const projectedReturnSpan = document.getElementById('projectedReturn');
+    const netGainSpan = document.getElementById('netGain');
+    
+    function updateCalculator() {
+      const amount = parseFloat(calcAmount.value);
+      const months = parseInt(calcPlan.value);
+      let roi = 0;
+      if (months === 12) roi = 2.0;
+      else if (months === 24) roi = 3.5;
+      else roi = 5.0;
+      
+      calcAmountDisplay.textContent = amount.toLocaleString();
+      const totalReturn = amount * Math.pow(1 + (roi/100), months);
+      const netGain = totalReturn - amount;
+      
+      projectedReturnSpan.textContent = '$' + totalReturn.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+      netGainSpan.textContent = (netGain >= 0 ? '+' : '') + '$' + netGain.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+    }
+    
+    if (calcAmount && calcPlan) {
+      calcAmount.addEventListener('input', updateCalculator);
+      calcPlan.addEventListener('change', updateCalculator);
+      updateCalculator();
+    }
+  </script>
+</body>
+</html>
