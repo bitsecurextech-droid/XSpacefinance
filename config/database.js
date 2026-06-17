@@ -1,31 +1,62 @@
-const sqlite3 = require('sqlite3').verbose();
-const path = require('path');
-const fs = require('fs');
+// database.js – PostgreSQL (Supabase) version
+const { Pool } = require('pg');
+require('dotenv').config(); // optional, for local .env support
 
-const dbPath = path.join(__dirname, '..', 'data', 'xspacefinance.db');
+// Create connection pool using environment variable
+const pool = new Pool({
+  connectionString: process.env.DATABASE_URL,
+  ssl: { rejectUnauthorized: false } // required for Supabase
+});
 
-// Ensure the data directory exists
-const dataDir = path.dirname(dbPath);
-if (!fs.existsSync(dataDir)) {
-  fs.mkdirSync(dataDir, { recursive: true });
+// Helper: convert '?' placeholders to PostgreSQL '$1', '$2', ...
+function convertPlaceholders(sql, params) {
+  if (!params || params.length === 0) return sql;
+  let index = 1;
+  return sql.replace(/\?/g, () => `$${index++}`);
 }
 
-const db = new sqlite3.Database(dbPath);
+// Get a single row
+const get = async (sql, params = []) => {
+  const client = await pool.connect();
+  try {
+    const result = await client.query(convertPlaceholders(sql, params), params);
+    return result.rows[0] || null;
+  } finally {
+    client.release();
+  }
+};
 
-// Enable foreign keys
-db.run('PRAGMA foreign_keys = ON');
+// Get multiple rows
+const all = async (sql, params = []) => {
+  const client = await pool.connect();
+  try {
+    const result = await client.query(convertPlaceholders(sql, params), params);
+    return result.rows;
+  } finally {
+    client.release();
+  }
+};
+
+// Run an INSERT, UPDATE, or DELETE
+const run = async (sql, params = []) => {
+  const client = await pool.connect();
+  try {
+    const result = await client.query(convertPlaceholders(sql, params), params);
+    // Return the last inserted ID if available (for INSERT)
+    return { lastID: result.rows[0]?.id || null };
+  } finally {
+    client.release();
+  }
+};
+
+// Close the pool (for graceful shutdown)
+const close = async () => {
+  await pool.end();
+};
 
 module.exports = {
-  get: (sql, params) => new Promise((resolve, reject) => {
-    db.get(sql, params, (err, row) => err ? reject(err) : resolve(row));
-  }),
-  all: (sql, params) => new Promise((resolve, reject) => {
-    db.all(sql, params, (err, rows) => err ? reject(err) : resolve(rows));
-  }),
-  run: (sql, params) => new Promise((resolve, reject) => {
-    db.run(sql, params, function(err) {
-      if (err) reject(err);
-      else resolve({ lastID: this.lastID });
-    });
-  })
+  get,
+  all,
+  run,
+  close
 };
