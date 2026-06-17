@@ -905,59 +905,6 @@
         </div>
     </section>
 
-    <!-- Activity & Notifications -->
-    <section class="py-20 lg:py-28 bg-slate-900 border-y border-slate-800" id="sec-activity">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="max-w-2xl mb-12">
-                <p class="text-xs font-mono font-semibold text-blue-500 uppercase tracking-widest mb-3">— Activity & Notifications</p>
-                <h2 class="text-3xl sm:text-4xl font-bold text-white tracking-tight">Real‑time transaction feed</h2>
-                <p class="mt-4 text-base text-slate-400 leading-relaxed">Every login, deposit, investment, credit, and withdrawal is logged and displayed here. Full visibility, always.</p>
-            </div>
-            <div class="bg-slate-800/50 rounded-2xl border border-slate-700/50 overflow-hidden">
-                <div class="max-h-[400px] overflow-y-auto no-scrollbar">
-                    <div class="transaction-item flex items-start gap-4 px-6 py-4 border-b border-slate-700/50 animate-slide-in-left">
-                        <div class="tx-icon bg-blue-500/10 text-blue-400"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></div>
-                        <div class="flex-1 min-w-0"><p class="text-sm font-semibold text-white">Login</p><p class="text-xs text-slate-400">Chrome on Windows · IP 192.168.1.1</p></div>
-                        <div class="text-right flex-shrink-0"><span class="status-badge completed">Completed</span><p class="text-[10px] text-slate-500 mt-1">2 mins ago</p></div>
-                    </div>
-                    <div class="transaction-item flex items-start gap-4 px-6 py-4 border-b border-slate-700/50 animate-slide-in-left" style="animation-delay:0.1s">
-                        <div class="tx-icon bg-emerald-500/10 text-emerald-400"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v4"/><path d="M12 18v4"/><path d="M4.93 4.93l2.83 2.83"/><path d="M16.24 16.24l2.83 2.83"/><path d="M2 12h4"/><path d="M18 12h4"/><path d="M4.93 19.07l2.83-2.83"/><path d="M16.24 7.76l2.83-2.83"/></svg></div>
-                        <div class="flex-1 min-w-0"><p class="text-sm font-semibold text-white">Investment Activated</p><p class="text-xs text-slate-400">Started "8888 Investment" · $8,000 · Start Date: 2026-06-17</p></div>
-                        <div class="text-right flex-shrink-0"><span class="status-badge active">Active</span><p class="text-[10px] text-slate-500 mt-1">15 mins ago</p></div>
-                    </div>
-                    <div class="transaction-item flex items-start gap-4 px-6 py-4 border-b border-slate-700/50 animate-slide-in-left" style="animation-delay:0.2s">
-                        <div class="tx-icon bg-green-500/10 text-green-400"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v20"/><path d="M17 7H7"/><path d="M17 12H7"/><path d="M17 17H7"/></svg></div>
-                        <div class="flex-1 min-w-0"><p class="text-sm font-semibold text-white">Deposit Credited</p><p class="text-xs text-slate-400">$3,000 via Bitcoin · TXN: #BTC-8821</p></div>
-                        <div class="text-right flex-shrink-0"><span class="status-badge completed">Completed</span><p class="text-[10px] text-slate-500 mt-1">1 hour ago</p></div>
-                    </div>
-                    <div class="transaction-item flex items-start gap-4 px-6 py-4 border-b border-slate-700/50 animate-slide-in-left" style="animation-delay:0.3s">
-                        <div class="tx-icon bg-blue-500/10 text-blue-400"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"/><path d="m9 12 2 2 4-4"/></svg></div>
-                        <div class="flex-1 min-w-0"><p class="text-sm font-semibold text-white">Daily Return Credited</p><p class="text-xs text-slate-400">+$9.70 to wallet · Compounding active</p></div>
-                        <div class="text-right flex-shrink-0"><span class="status-badge completed">Completed</span><p class="text-[10px] text-slate-500 mt-1">3 hours ago</p></div>
-                    </div>
-                    <div class="transaction-item flex items-start gap-4 px-6 py-4 border-b border-slate-700/50 animate-slide-in-left" style="animation-delay:0.4s">
-                        <div class="tx-icon bg-amber-500/10 text-amber-400"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 7V4a1 1 0 0 0-1-1H5a2 2 0 0 0 0 4h15a1 1 0 0 1 1 1v4h-3a2 2 0 0 0 0 4h3a1 1 0 0 0 1-1v-2a1 1 0 0 0-1-1"/><path d="M3 5v14a2 2 0 0 0 2 2h15a1 1 0 0 0 1-1v-4"/></svg></div>
-                        <div class="flex-1 min-w-0"><p class="text-sm font-semibold text-white">Withdrawal Requested</p><p class="text-xs text-slate-400">$14,280.00 to BTC Wallet · TXN: #WD-992</p></div>
-                        <div class="text-right flex-shrink-0"><span class="status-badge pending">Pending</span><p class="text-[10px] text-slate-500 mt-1">6 hours ago</p></div>
-                    </div>
-                    <div class="transaction-item flex items-start gap-4 px-6 py-4 border-b border-slate-700/50 animate-slide-in-left" style="animation-delay:0.5s">
-                        <div class="tx-icon bg-red-500/10 text-red-400"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 8v4"/><path d="M12 16h.01"/></svg></div>
-                        <div class="flex-1 min-w-0"><p class="text-sm font-semibold text-white">Investment Failed</p><p class="text-xs text-red-400">SQLITE_CONSTRAINT: NOT NULL constraint failed: investments.start_date</p></div>
-                        <div class="text-right flex-shrink-0"><span class="status-badge failed">Failed</span><p class="text-[10px] text-slate-500 mt-1">1 day ago</p></div>
-                    </div>
-                    <div class="transaction-item flex items-start gap-4 px-6 py-4 animate-slide-in-left" style="animation-delay:0.6s">
-                        <div class="tx-icon bg-purple-500/10 text-purple-400"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"/><path d="m9 12 2 2 4-4"/></svg></div>
-                        <div class="flex-1 min-w-0"><p class="text-sm font-semibold text-white">Investment Matured</p><p class="text-xs text-slate-400">"108 Circle" · +$2,000 profit · Total: $3,000</p></div>
-                        <div class="text-right flex-shrink-0"><span class="status-badge completed">Completed</span><p class="text-[10px] text-slate-500 mt-1">2 days ago</p></div>
-                    </div>
-                </div>
-            </div>
-            <div class="mt-8 text-center">
-                <button onclick="alert('Showing all 28 transactions.')" class="inline-flex items-center gap-2 text-sm font-semibold text-blue-400 hover:text-blue-300 transition-colors">View all activity <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg></button>
-            </div>
-        </div>
-    </section>
-
     <!-- Security -->
     <section class="dark-preserve py-20 lg:py-28 bg-slate-950" id="sec-security">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
