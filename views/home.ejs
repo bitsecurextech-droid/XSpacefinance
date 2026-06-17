@@ -148,8 +148,24 @@
         .phone-screen {
             background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
         }
-        .screen {
-            transition: opacity 0.5s ease-in-out;
+        .screen-slide {
+            transition: opacity 0.6s ease-in-out, transform 0.6s ease-in-out;
+            position: absolute;
+            inset: 0;
+            opacity: 0;
+            transform: scale(0.97);
+            pointer-events: none;
+            display: flex;
+            flex-direction: column;
+        }
+        .screen-slide.active {
+            opacity: 1;
+            transform: scale(1);
+            pointer-events: auto;
+        }
+        .screen-slide.exit {
+            opacity: 0;
+            transform: scale(0.97);
         }
         .progress-bar-fill {
             transition: width 0.5s ease;
@@ -190,12 +206,14 @@
             margin: 0 auto;
         }
 
-        /* Notification/Activity Feed Styles */
-        .transaction-item {
-            transition: background 0.15s ease;
-        }
-        .transaction-item:hover {
-            background: rgba(255, 255, 255, 0.03);
+        .tx-icon {
+            width: 2rem;
+            height: 2rem;
+            border-radius: 9999px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
         }
         .status-badge {
             font-size: 0.6rem;
@@ -221,25 +239,19 @@
             background: rgba(59, 130, 246, 0.15);
             color: #60a5fa;
         }
-        .tx-icon {
-            width: 2rem;
-            height: 2rem;
-            border-radius: 9999px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            flex-shrink: 0;
+        .transaction-item {
+            transition: background 0.15s ease;
+        }
+        .transaction-item:hover {
+            background: rgba(255, 255, 255, 0.03);
         }
 
-        /* Plan card hover effects */
         .plan-card-phone {
             transition: all 0.2s ease;
         }
         .plan-card-phone:hover {
             transform: scale(1.01);
         }
-
-        /* Scrollable plans list in phone */
         .plans-scroll-vertical {
             max-height: 280px;
             overflow-y: auto;
@@ -253,6 +265,29 @@
         .plans-scroll-vertical::-webkit-scrollbar-thumb {
             background: #334155;
             border-radius: 9999px;
+        }
+
+        /* Page indicator dots */
+        .phone-dots {
+            display: flex;
+            gap: 0.35rem;
+            justify-content: center;
+            padding: 0.25rem 0 0.15rem;
+        }
+        .phone-dot {
+            width: 0.4rem;
+            height: 0.4rem;
+            border-radius: 9999px;
+            background: #334155;
+            transition: background 0.3s, transform 0.3s;
+            cursor: pointer;
+        }
+        .phone-dot.active {
+            background: #3b82f6;
+            transform: scale(1.2);
+        }
+        .phone-dot:hover {
+            background: #60a5fa;
         }
     </style>
 </head>
@@ -298,7 +333,7 @@
         </div>
     </nav>
 
-    <!-- ===== HERO SECTION – PHONE ===== -->
+    <!-- ===== HERO SECTION – ANIMATED PHONE ===== -->
     <section class="relative pt-12 pb-20 lg:pt-20 lg:pb-28 overflow-hidden bg-gradient-to-b from-slate-950 via-slate-900 to-slate-950">
         <div class="absolute inset-0 overflow-hidden pointer-events-none" aria-hidden="true">
             <div class="absolute -top-60 right-1/4 w-[500px] h-[500px] rounded-full bg-blue-600/[0.04] blur-[120px]"></div>
@@ -326,155 +361,221 @@
                     </div>
                 </div>
 
-                <!-- Hero Phone – Investment Plans List -->
+                <!-- ANIMATED PHONE -->
                 <div class="relative animate-float">
                     <div class="relative mx-auto w-[280px] sm:w-[300px] h-[560px] sm:h-[620px] rounded-[3rem] border-[10px] border-slate-800 bg-slate-900 shadow-2xl overflow-hidden">
                         <div class="absolute top-2 left-1/2 -translate-x-1/2 w-32 h-6 bg-slate-900 rounded-b-2xl z-20"></div>
 
-                        <div class="absolute inset-0 phone-screen overflow-hidden flex flex-col">
-                            <!-- Status Bar -->
-                            <div class="px-5 pt-10 pb-2 flex items-center justify-between shrink-0 bg-transparent">
-                                <span class="text-[10px] font-mono text-white">9:41</span>
-                                <div class="flex items-center gap-1">
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="text-white"><circle cx="12" cy="12" r="10"/><path d="M12 8v4l3 3"/></svg>
-                                    <span class="text-[10px] font-mono text-white">100%</span>
+                        <div class="absolute inset-0 phone-screen overflow-hidden">
+
+                            <!-- ===== SCREEN 1: Investment Plans ===== -->
+                            <div class="screen-slide active" data-screen="0">
+                                <!-- Status Bar -->
+                                <div class="px-5 pt-10 pb-2 flex items-center justify-between shrink-0 bg-transparent">
+                                    <span class="text-[10px] font-mono text-white">9:41</span>
+                                    <div class="flex items-center gap-1">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="text-white"><circle cx="12" cy="12" r="10"/><path d="M12 8v4l3 3"/></svg>
+                                        <span class="text-[10px] font-mono text-white">100%</span>
+                                    </div>
                                 </div>
+                                <!-- Header -->
+                                <div class="px-5 pt-2 pb-1 shrink-0">
+                                    <span class="text-[13px] font-bold text-white">Investment Plans</span>
+                                    <p class="text-[9px] text-slate-500 mt-0.5">Choose a plan that fits your goals</p>
+                                </div>
+                                <!-- Scrollable Plans -->
+                                <div class="flex-1 overflow-y-auto px-4 pb-3 plans-scroll-vertical">
+                                    <div class="space-y-2.5">
+                                        <div class="plan-card-phone bg-slate-900/60 rounded-lg border border-slate-800/40 p-3">
+                                            <div class="flex justify-between items-start"><div><p class="text-[11px] font-bold text-white">108 Circle</p><p class="text-[8px] text-slate-400">1 month</p></div><span class="text-[10px] font-bold text-blue-400">200%</span></div>
+                                            <div class="flex justify-between mt-1"><span class="text-[8px] text-slate-500">$100 – $2,221</span></div>
+                                        </div>
+                                        <div class="plan-card-phone bg-slate-900/60 rounded-lg border border-slate-800/40 p-3">
+                                            <div class="flex justify-between items-start"><div><p class="text-[11px] font-bold text-white">2222 Investment</p><p class="text-[8px] text-slate-400">1 month</p></div><span class="text-[10px] font-bold text-blue-400">200%</span></div>
+                                            <div class="flex justify-between mt-1"><span class="text-[8px] text-slate-500">$2,222 – $7,999</span></div>
+                                        </div>
+                                        <div class="plan-card-phone bg-blue-500/10 rounded-lg border border-blue-500/25 p-3 relative">
+                                            <div class="absolute -top-1.5 right-2.5"><span class="bg-blue-500 text-[6px] text-white font-bold px-1.5 py-0.5 rounded-full uppercase">Popular</span></div>
+                                            <div class="flex justify-between items-start"><div><p class="text-[11px] font-bold text-white">8888 Investment</p><p class="text-[8px] text-slate-400">1 month</p></div><span class="text-[10px] font-bold text-blue-400">300%</span></div>
+                                            <div class="flex justify-between mt-1"><span class="text-[8px] text-slate-500">$8,000 – $14,999</span></div>
+                                        </div>
+                                        <div class="plan-card-phone bg-blue-500/10 rounded-lg border border-blue-500/25 p-3 relative">
+                                            <div class="absolute -top-1.5 right-2.5"><span class="bg-blue-500 text-[6px] text-white font-bold px-1.5 py-0.5 rounded-full uppercase">Popular</span></div>
+                                            <div class="flex justify-between items-start"><div><p class="text-[11px] font-bold text-white">Tier 3 Investment</p><p class="text-[8px] text-slate-400">1 month</p></div><span class="text-[10px] font-bold text-blue-400">350%</span></div>
+                                            <div class="flex justify-between mt-1"><span class="text-[8px] text-slate-500">$15,000 – $19,999</span></div>
+                                        </div>
+                                        <div class="plan-card-phone bg-blue-500/10 rounded-lg border border-blue-500/25 p-3 relative">
+                                            <div class="absolute -top-1.5 right-2.5"><span class="bg-blue-500 text-[6px] text-white font-bold px-1.5 py-0.5 rounded-full uppercase">Popular</span></div>
+                                            <div class="flex justify-between items-start"><div><p class="text-[11px] font-bold text-white">Bitcoin Elite Group</p><p class="text-[8px] text-slate-400">2 weeks</p></div><span class="text-[10px] font-bold text-blue-400">750%</span></div>
+                                            <div class="flex justify-between mt-1"><span class="text-[8px] text-slate-500">$20,000 – $999,999,999</span></div>
+                                        </div>
+                                        <div class="bg-gradient-to-br from-emerald-500/10 to-emerald-500/5 rounded-lg border border-emerald-500/15 p-3 mt-1">
+                                            <p class="text-[8px] text-emerald-400/80 font-semibold uppercase tracking-wider mb-1">8888 Investment Projection</p>
+                                            <div class="flex justify-between items-baseline"><div><span class="text-[8px] text-slate-500 block">Invest $10,000</span><span class="text-sm font-bold text-white tabular-nums">$40,000</span></div><div class="text-right"><span class="text-[8px] text-slate-500 block">1 mo return</span><span class="text-sm font-bold text-emerald-400 tabular-nums">+300%</span></div></div>
+                                            <div class="mt-1.5"><svg viewBox="0 0 180 28" class="w-full" fill="none"><defs><linearGradient id="pg1" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#10b981" stop-opacity="0.15"/><stop offset="100%" stop-color="#10b981" stop-opacity="0"/></linearGradient></defs><path d="M0,24 C20,22 40,20 60,17 C80,14 100,10 120,7 C140,5 160,3 180,2 L180,28 L0,28Z" fill="url(#pg1)"/><polyline points="0,24 30,20 60,17 90,13 120,9 150,5 180,2" stroke="#10b981" stroke-width="1" fill="none" stroke-linecap="round"/></svg></div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <!-- Bottom Nav -->
+                                <div class="shrink-0 border-t border-slate-800/80 bg-slate-950/95 px-4 py-2 flex items-center justify-between">
+                                    <div class="flex flex-col items-center gap-0.5"><svg class="w-4 h-4 text-slate-500" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="m2.25 12 8.954-8.955c.44-.439 1.152-.439 1.591 0L21.75 12M4.5 9.75v10.125c0 .621.504 1.125 1.125 1.125H9.75v-4.875c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125V21h4.125c.621 0 1.125-.504 1.125-1.125V9.75M8.25 21h8.25"/></svg><span class="text-[7px] text-slate-500 font-medium">Home</span></div>
+                                    <div class="flex flex-col items-center gap-0.5"><svg class="w-4 h-4 text-blue-400" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M3 13.125C3 12.504 3.504 12 4.125 12h2.25c.621 0 1.125.504 1.125 1.125v6.75C7.5 20.496 6.996 21 6.375 21h-2.25A1.125 1.125 0 0 1 3 19.875v-6.75ZM9.75 8.625c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125v11.25c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 0 1-1.125-1.125V8.625ZM16.5 4.125c0-.621.504-1.125 1.125-1.125h2.25C20.496 3 21 3.504 21 4.125v15.75c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 0 1-1.125-1.125V4.125Z"/></svg><span class="text-[7px] text-blue-400 font-medium">Plans</span></div>
+                                    <div class="flex flex-col items-center gap-0.5"><svg class="w-4 h-4 text-slate-500" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M21 12a2.25 2.25 0 0 0-2.25-2.25H15a3 3 0 1 1-6 0H5.25A2.25 2.25 0 0 0 3 12m18 0v6a2.25 2.25 0 0 1-2.25 2.25H5.25A2.25 2.25 0 0 1 3 18v-6m18 0V9M3 12V9m18 0a2.25 2.25 0 0 0-2.25-2.25H5.25A2.25 2.25 0 0 0 3 9m18 0V6a2.25 2.25 0 0 0-2.25-2.25H5.25A2.25 2.25 0 0 0 3 6v3"/></svg><span class="text-[7px] text-slate-500 font-medium">Wallet</span></div>
+                                    <div class="flex flex-col items-center gap-0.5"><svg class="w-4 h-4 text-slate-500" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 6a3.75 3.75 0 1 1-7.5 0 3.75 3.75 0 0 1 7.5 0ZM4.501 20.118a7.5 7.5 0 0 1 14.998 0A17.933 17.933 0 0 1 12 21.75c-2.676 0-5.216-.584-7.499-1.632Z"/></svg><span class="text-[7px] text-slate-500 font-medium">Profile</span></div>
+                                </div>
+                                <div class="flex justify-center pb-2 pt-0.5 shrink-0"><div class="w-24 h-1 bg-white/20 rounded-full"></div></div>
                             </div>
 
-                            <!-- Header: Investment Plans -->
-                            <div class="px-5 pt-2 pb-1 shrink-0">
-                                <span class="text-[13px] font-bold text-white">Investment Plans</span>
-                                <p class="text-[9px] text-slate-500 mt-0.5">Choose a plan that fits your goals</p>
+                            <!-- ===== SCREEN 2: Select Plan ===== -->
+                            <div class="screen-slide" data-screen="1">
+                                <div class="px-5 pt-10 pb-2 flex items-center justify-between shrink-0 bg-transparent">
+                                    <span class="text-[10px] font-mono text-white">9:41</span>
+                                    <div class="flex items-center gap-1">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="text-white"><circle cx="12" cy="12" r="10"/><path d="M12 8v4l3 3"/></svg>
+                                        <span class="text-[10px] font-mono text-white">100%</span>
+                                    </div>
+                                </div>
+                                <div class="flex items-center justify-between px-5 pt-2 pb-1 shrink-0">
+                                    <span class="font-display text-sm font-extrabold text-white">XSpaceFinance</span>
+                                    <div class="size-7 rounded-full bg-slate-800 grid place-items-center border border-slate-700">
+                                        <span class="text-[9px] font-bold text-slate-400">JD</span>
+                                    </div>
+                                </div>
+                                <div class="flex-1 overflow-y-auto px-4 pb-3">
+                                    <p class="text-[11px] font-bold text-white mb-3">Select Plan</p>
+                                    <div class="space-y-2.5">
+                                        <div class="plan-card-phone p-3 rounded-xl border-2 border-blue-500 bg-blue-500/10">
+                                            <div class="flex justify-between items-start"><div><p class="font-bold text-white text-sm">108 Circle</p><p class="text-[10px] text-slate-400">1 month · Simple</p></div><span class="text-[9px] font-bold text-blue-400">200%</span></div>
+                                            <div class="flex justify-between mt-1.5"><span class="text-[9px] text-slate-500">$100 – $2,221</span><span class="text-[9px] font-bold text-blue-400">SELECTED</span></div>
+                                        </div>
+                                        <div class="plan-card-phone p-3 rounded-xl border border-slate-700 relative">
+                                            <div class="absolute -top-1.5 right-3"><span class="bg-blue-500 text-[6px] text-white font-bold px-1.5 py-0.5 rounded-full uppercase tracking-wider">Popular</span></div>
+                                            <div class="flex justify-between items-start"><div><p class="font-bold text-white text-sm">8888 Investment</p><p class="text-[10px] text-slate-400">1 month · Simple</p></div><span class="text-[10px] font-bold text-blue-400">300%</span></div>
+                                            <div class="flex justify-between mt-1.5"><span class="text-[9px] text-slate-500">$8,000 – $14,999</span></div>
+                                        </div>
+                                        <div class="plan-card-phone p-3 rounded-xl border border-slate-700 relative">
+                                            <div class="absolute -top-1.5 right-3"><span class="bg-blue-500 text-[6px] text-white font-bold px-1.5 py-0.5 rounded-full uppercase tracking-wider">Popular</span></div>
+                                            <div class="flex justify-between items-start"><div><p class="font-bold text-white text-sm">Bitcoin Elite Group</p><p class="text-[10px] text-slate-400">2 weeks · Simple</p></div><span class="text-[10px] font-bold text-blue-400">750%</span></div>
+                                            <div class="flex justify-between mt-1.5"><span class="text-[9px] text-slate-500">$20,000 – $999,999,999</span></div>
+                                        </div>
+                                    </div>
+                                    <div class="mt-4 pt-3 border-t border-slate-800/60">
+                                        <p class="text-[9px] text-slate-500 mb-1">Investment Amount</p>
+                                        <p class="text-2xl font-bold text-white">$5,000</p>
+                                        <button class="w-full mt-3 py-2.5 bg-blue-600 rounded-lg text-sm font-semibold text-white hover:bg-blue-700 transition">Activate Investment</button>
+                                    </div>
+                                </div>
+                                <div class="shrink-0 border-t border-slate-800/80 bg-slate-950/95 px-4 py-2 flex items-center justify-between">
+                                    <div class="flex flex-col items-center gap-0.5"><svg class="w-4 h-4 text-slate-500" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="m2.25 12 8.954-8.955c.44-.439 1.152-.439 1.591 0L21.75 12M4.5 9.75v10.125c0 .621.504 1.125 1.125 1.125H9.75v-4.875c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125V21h4.125c.621 0 1.125-.504 1.125-1.125V9.75M8.25 21h8.25"/></svg><span class="text-[7px] text-slate-500 font-medium">Home</span></div>
+                                    <div class="flex flex-col items-center gap-0.5"><svg class="w-4 h-4 text-blue-400" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M3 13.125C3 12.504 3.504 12 4.125 12h2.25c.621 0 1.125.504 1.125 1.125v6.75C7.5 20.496 6.996 21 6.375 21h-2.25A1.125 1.125 0 0 1 3 19.875v-6.75ZM9.75 8.625c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125v11.25c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 0 1-1.125-1.125V8.625ZM16.5 4.125c0-.621.504-1.125 1.125-1.125h2.25C20.496 3 21 3.504 21 4.125v15.75c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 0 1-1.125-1.125V4.125Z"/></svg><span class="text-[7px] text-blue-400 font-medium">Plans</span></div>
+                                    <div class="flex flex-col items-center gap-0.5"><svg class="w-4 h-4 text-slate-500" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M21 12a2.25 2.25 0 0 0-2.25-2.25H15a3 3 0 1 1-6 0H5.25A2.25 2.25 0 0 0 3 12m18 0v6a2.25 2.25 0 0 1-2.25 2.25H5.25A2.25 2.25 0 0 1 3 18v-6m18 0V9M3 12V9m18 0a2.25 2.25 0 0 0-2.25-2.25H5.25A2.25 2.25 0 0 0 3 9m18 0V6a2.25 2.25 0 0 0-2.25-2.25H5.25A2.25 2.25 0 0 0 3 6v3"/></svg><span class="text-[7px] text-slate-500 font-medium">Wallet</span></div>
+                                    <div class="flex flex-col items-center gap-0.5"><svg class="w-4 h-4 text-slate-500" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 6a3.75 3.75 0 1 1-7.5 0 3.75 3.75 0 0 1 7.5 0ZM4.501 20.118a7.5 7.5 0 0 1 14.998 0A17.933 17.933 0 0 1 12 21.75c-2.676 0-5.216-.584-7.499-1.632Z"/></svg><span class="text-[7px] text-slate-500 font-medium">Profile</span></div>
+                                </div>
+                                <div class="flex justify-center pb-2 pt-0.5 shrink-0"><div class="w-24 h-1 bg-white/20 rounded-full"></div></div>
                             </div>
 
-                            <!-- Scrollable Plan Cards -->
-                            <div class="flex-1 overflow-y-auto px-4 pb-3 plans-scroll-vertical">
-                                <div class="space-y-2.5">
-                                    <!-- 108 Circle -->
-                                    <div class="plan-card-phone bg-slate-900/60 rounded-lg border border-slate-800/40 p-3">
-                                        <div class="flex justify-between items-start">
-                                            <div>
-                                                <p class="text-[11px] font-bold text-white">108 Circle</p>
-                                                <p class="text-[8px] text-slate-400">1 month</p>
-                                            </div>
-                                            <span class="text-[10px] font-bold text-blue-400">200%</span>
-                                        </div>
-                                        <div class="flex justify-between mt-1">
-                                            <span class="text-[8px] text-slate-500">$100 – $2,221</span>
-                                        </div>
-                                    </div>
-
-                                    <!-- 2222 Investment -->
-                                    <div class="plan-card-phone bg-slate-900/60 rounded-lg border border-slate-800/40 p-3">
-                                        <div class="flex justify-between items-start">
-                                            <div>
-                                                <p class="text-[11px] font-bold text-white">2222 Investment</p>
-                                                <p class="text-[8px] text-slate-400">1 month</p>
-                                            </div>
-                                            <span class="text-[10px] font-bold text-blue-400">200%</span>
-                                        </div>
-                                        <div class="flex justify-between mt-1">
-                                            <span class="text-[8px] text-slate-500">$2,222 – $7,999</span>
-                                        </div>
-                                    </div>
-
-                                    <!-- 8888 Investment (Popular) -->
-                                    <div class="plan-card-phone bg-blue-500/10 rounded-lg border border-blue-500/25 p-3 relative">
-                                        <div class="absolute -top-1.5 right-2.5">
-                                            <span class="bg-blue-500 text-[6px] text-white font-bold px-1.5 py-0.5 rounded-full uppercase">Popular</span>
-                                        </div>
-                                        <div class="flex justify-between items-start">
-                                            <div>
-                                                <p class="text-[11px] font-bold text-white">8888 Investment</p>
-                                                <p class="text-[8px] text-slate-400">1 month</p>
-                                            </div>
-                                            <span class="text-[10px] font-bold text-blue-400">300%</span>
-                                        </div>
-                                        <div class="flex justify-between mt-1">
-                                            <span class="text-[8px] text-slate-500">$8,000 – $14,999</span>
-                                        </div>
-                                    </div>
-
-                                    <!-- Tier 3 Investment (Popular) -->
-                                    <div class="plan-card-phone bg-blue-500/10 rounded-lg border border-blue-500/25 p-3 relative">
-                                        <div class="absolute -top-1.5 right-2.5">
-                                            <span class="bg-blue-500 text-[6px] text-white font-bold px-1.5 py-0.5 rounded-full uppercase">Popular</span>
-                                        </div>
-                                        <div class="flex justify-between items-start">
-                                            <div>
-                                                <p class="text-[11px] font-bold text-white">Tier 3 Investment</p>
-                                                <p class="text-[8px] text-slate-400">1 month</p>
-                                            </div>
-                                            <span class="text-[10px] font-bold text-blue-400">350%</span>
-                                        </div>
-                                        <div class="flex justify-between mt-1">
-                                            <span class="text-[8px] text-slate-500">$15,000 – $19,999</span>
-                                        </div>
-                                    </div>
-
-                                    <!-- Bitcoin Elite Group (Popular) -->
-                                    <div class="plan-card-phone bg-blue-500/10 rounded-lg border border-blue-500/25 p-3 relative">
-                                        <div class="absolute -top-1.5 right-2.5">
-                                            <span class="bg-blue-500 text-[6px] text-white font-bold px-1.5 py-0.5 rounded-full uppercase">Popular</span>
-                                        </div>
-                                        <div class="flex justify-between items-start">
-                                            <div>
-                                                <p class="text-[11px] font-bold text-white">Bitcoin Elite Group</p>
-                                                <p class="text-[8px] text-slate-400">2 weeks</p>
-                                            </div>
-                                            <span class="text-[10px] font-bold text-blue-400">750%</span>
-                                        </div>
-                                        <div class="flex justify-between mt-1">
-                                            <span class="text-[8px] text-slate-500">$20,000 – $999,999,999</span>
-                                        </div>
-                                    </div>
-
-                                    <!-- Projection Card -->
-                                    <div class="bg-gradient-to-br from-emerald-500/10 to-emerald-500/5 rounded-lg border border-emerald-500/15 p-3 mt-1">
-                                        <p class="text-[8px] text-emerald-400/80 font-semibold uppercase tracking-wider mb-1">8888 Investment Projection</p>
-                                        <div class="flex justify-between items-baseline">
-                                            <div>
-                                                <span class="text-[8px] text-slate-500 block">Invest $10,000</span>
-                                                <span class="text-sm font-bold text-white tabular-nums">$40,000</span>
-                                            </div>
-                                            <div class="text-right">
-                                                <span class="text-[8px] text-slate-500 block">1 mo return</span>
-                                                <span class="text-sm font-bold text-emerald-400 tabular-nums">+300%</span>
-                                            </div>
-                                        </div>
-                                        <div class="mt-1.5">
-                                            <svg viewBox="0 0 180 28" class="w-full" fill="none">
-                                                <defs><linearGradient id="projGradHero" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#10b981" stop-opacity="0.15"/><stop offset="100%" stop-color="#10b981" stop-opacity="0"/></linearGradient></defs>
-                                                <path d="M0,24 C20,22 40,20 60,17 C80,14 100,10 120,7 C140,5 160,3 180,2 L180,28 L0,28Z" fill="url(#projGradHero)"/>
-                                                <polyline points="0,24 30,20 60,17 90,13 120,9 150,5 180,2" stroke="#10b981" stroke-width="1" fill="none" stroke-linecap="round"/>
-                                            </svg>
-                                        </div>
+                            <!-- ===== SCREEN 3: Withdrawal / Matured ===== -->
+                            <div class="screen-slide" data-screen="2">
+                                <div class="px-5 pt-10 pb-2 flex items-center justify-between shrink-0 bg-transparent">
+                                    <span class="text-[10px] font-mono text-white">9:41</span>
+                                    <div class="flex items-center gap-1">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="text-white"><circle cx="12" cy="12" r="10"/><path d="M12 8v4l3 3"/></svg>
+                                        <span class="text-[10px] font-mono text-white">100%</span>
                                     </div>
                                 </div>
+                                <div class="flex items-center justify-between px-5 pt-2 pb-1 shrink-0">
+                                    <span class="font-display text-sm font-extrabold text-white">XSpaceFinance</span>
+                                    <div class="size-7 rounded-full bg-slate-800 grid place-items-center border border-slate-700">
+                                        <span class="text-[9px] font-bold text-slate-400">JD</span>
+                                    </div>
+                                </div>
+                                <div class="flex-1 overflow-y-auto px-4 pb-3">
+                                    <div class="flex items-center justify-between mb-2">
+                                        <span class="font-display text-sm font-extrabold text-white">Withdrawal</span>
+                                    </div>
+                                    <span class="inline-block px-2 py-0.5 bg-green-500/20 text-green-400 text-[10px] rounded mb-3">Matured</span>
+                                    <p class="text-xs text-slate-500">Investment Matured</p>
+                                    <p class="text-3xl font-bold text-white mt-1">$14,280.00</p>
+                                    <p class="text-sm text-green-500 mt-1">+$4,280 profit (+42.8%)</p>
+                                    <div class="grid grid-cols-2 gap-3 mt-4 p-3 bg-slate-800/50 rounded-xl">
+                                        <div><p class="text-[10px] text-slate-500">Principal</p><p class="font-bold text-white">$10,000.00</p></div>
+                                        <div><p class="text-[10px] text-slate-500">Compound Returns</p><p class="font-bold text-green-500">+$4,280.00</p></div>
+                                    </div>
+                                    <div class="mt-3 p-3 bg-slate-800/50 rounded-xl">
+                                        <p class="text-[10px] text-slate-500">Total Withdrawn</p>
+                                        <p class="text-2xl font-bold text-white">$14,280.00</p>
+                                    </div>
+                                    <div class="mt-3 p-3 rounded-xl border border-slate-700">
+                                        <p class="text-xs text-slate-500 mb-1">Withdraw to</p>
+                                        <div class="flex items-center gap-2">
+                                            <div class="w-6 h-6 rounded-full flex items-center justify-center">
+                                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="14" height="14"><path fill="#F7931A" d="M16,2A14,14,0,1,0,30,16,14,14,0,0,0,16,2Z"/><path fill="#FFF" d="M21.93,13.63a3.56,3.56,0,0,0-2.47-2.06,3.56,3.56,0,0,0-2.47-2.06l-.22-1.1-1.07.28.21,1.08a3.56,3.56,0,0,0-2.47-2.06l-.22-1.1-1.07.28.21,1.08-2.38.61.44,2.27,1.92-.49-.44-2.27,2.38-.61.22,1.1a3.56,3.56,0,0,0,2.47,2.06,3.56,3.56,0,0,0,2.47,2.06l.22,1.1,1.07-.28-.21-1.08a3.56,3.56,0,0,0,2.47-2.06l.22,1.1,1.07-.28Z"/></svg>
+                                            </div>
+                                            <span class="text-sm text-white">Bitcoin Wallet</span>
+                                        </div>
+                                        <button class="w-full mt-3 py-2 bg-blue-600 rounded-lg text-sm font-semibold text-white hover:bg-blue-700 transition">Withdraw $14,280.00</button>
+                                    </div>
+                                </div>
+                                <div class="shrink-0 border-t border-slate-800/80 bg-slate-950/95 px-4 py-2 flex items-center justify-between">
+                                    <div class="flex flex-col items-center gap-0.5"><svg class="w-4 h-4 text-slate-500" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="m2.25 12 8.954-8.955c.44-.439 1.152-.439 1.591 0L21.75 12M4.5 9.75v10.125c0 .621.504 1.125 1.125 1.125H9.75v-4.875c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125V21h4.125c.621 0 1.125-.504 1.125-1.125V9.75M8.25 21h8.25"/></svg><span class="text-[7px] text-slate-500 font-medium">Home</span></div>
+                                    <div class="flex flex-col items-center gap-0.5"><svg class="w-4 h-4 text-blue-400" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M3 13.125C3 12.504 3.504 12 4.125 12h2.25c.621 0 1.125.504 1.125 1.125v6.75C7.5 20.496 6.996 21 6.375 21h-2.25A1.125 1.125 0 0 1 3 19.875v-6.75ZM9.75 8.625c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125v11.25c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 0 1-1.125-1.125V8.625ZM16.5 4.125c0-.621.504-1.125 1.125-1.125h2.25C20.496 3 21 3.504 21 4.125v15.75c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 0 1-1.125-1.125V4.125Z"/></svg><span class="text-[7px] text-blue-400 font-medium">Plans</span></div>
+                                    <div class="flex flex-col items-center gap-0.5"><svg class="w-4 h-4 text-slate-500" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M21 12a2.25 2.25 0 0 0-2.25-2.25H15a3 3 0 1 1-6 0H5.25A2.25 2.25 0 0 0 3 12m18 0v6a2.25 2.25 0 0 1-2.25 2.25H5.25A2.25 2.25 0 0 1 3 18v-6m18 0V9M3 12V9m18 0a2.25 2.25 0 0 0-2.25-2.25H5.25A2.25 2.25 0 0 0 3 9m18 0V6a2.25 2.25 0 0 0-2.25-2.25H5.25A2.25 2.25 0 0 0 3 6v3"/></svg><span class="text-[7px] text-slate-500 font-medium">Wallet</span></div>
+                                    <div class="flex flex-col items-center gap-0.5"><svg class="w-4 h-4 text-slate-500" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 6a3.75 3.75 0 1 1-7.5 0 3.75 3.75 0 0 1 7.5 0ZM4.501 20.118a7.5 7.5 0 0 1 14.998 0A17.933 17.933 0 0 1 12 21.75c-2.676 0-5.216-.584-7.499-1.632Z"/></svg><span class="text-[7px] text-slate-500 font-medium">Profile</span></div>
+                                </div>
+                                <div class="flex justify-center pb-2 pt-0.5 shrink-0"><div class="w-24 h-1 bg-white/20 rounded-full"></div></div>
                             </div>
 
-                            <!-- Bottom Nav -->
-                            <div class="shrink-0 border-t border-slate-800/80 bg-slate-950/95 px-4 py-2 flex items-center justify-between">
-                                <div class="flex flex-col items-center gap-0.5 cursor-pointer group">
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="text-slate-500 group-hover:text-blue-500 transition"><path d="M15 21v-8a1 1 0 0 0-1-1h-4a1 1 0 0 0-1 1v8"/><path d="M3 10a2 2 0 0 1 .709-1.528l7-6a2 2 0 0 1 2.582 0l7 6A2 2 0 0 1 21 10v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>
-                                    <span class="text-[7px] font-medium text-slate-500 group-hover:text-blue-500">Home</span>
+                            <!-- ===== SCREEN 4: Investment Performance ===== -->
+                            <div class="screen-slide" data-screen="3">
+                                <div class="px-5 pt-10 pb-2 flex items-center justify-between shrink-0 bg-transparent">
+                                    <span class="text-[10px] font-mono text-white">9:41</span>
+                                    <div class="flex items-center gap-1">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="text-white"><circle cx="12" cy="12" r="10"/><path d="M12 8v4l3 3"/></svg>
+                                        <span class="text-[10px] font-mono text-white">100%</span>
+                                    </div>
                                 </div>
-                                <div class="flex flex-col items-center gap-0.5 cursor-pointer group">
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="text-blue-500"><rect width="7" height="7" x="3" y="3" rx="1"/><rect width="7" height="7" x="14" y="3" rx="1"/><rect width="7" height="7" x="14" y="14" rx="1"/><rect width="7" height="7" x="3" y="14" rx="1"/></svg>
-                                    <span class="text-[7px] font-medium text-blue-500">Plans</span>
+                                <div class="flex items-center justify-between px-5 pt-2 pb-1 shrink-0">
+                                    <span class="font-display text-sm font-extrabold text-white">XSpaceFinance</span>
+                                    <div class="size-7 rounded-full bg-slate-800 grid place-items-center border border-slate-700">
+                                        <span class="text-[9px] font-bold text-slate-400">JD</span>
+                                    </div>
                                 </div>
-                                <div class="flex flex-col items-center gap-0.5 cursor-pointer group">
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="text-slate-500 group-hover:text-blue-500 transition"><path d="M19 7V4a1 1 0 0 0-1-1H5a2 2 0 0 0 0 4h15a1 1 0 0 1 1 1v4h-3a2 2 0 0 0 0 4h3a1 1 0 0 0 1-1v-2a1 1 0 0 0-1-1"/><path d="M3 5v14a2 2 0 0 0 2 2h15a1 1 0 0 0 1-1v-4"/></svg>
-                                    <span class="text-[7px] font-medium text-slate-500 group-hover:text-blue-500">Wallet</span>
+                                <div class="flex-1 overflow-y-auto px-4 pb-3">
+                                    <div class="flex items-center justify-between mb-4">
+                                        <span class="font-display text-sm font-extrabold text-white">Investment Performance</span>
+                                    </div>
+                                    <p class="text-lg font-bold text-white">Growth Fund</p>
+                                    <div class="grid grid-cols-2 gap-3 mt-2">
+                                        <div class="p-2 bg-slate-800/50 rounded-lg"><p class="text-[9px] text-slate-500">Invested</p><p class="font-bold text-white">$5,000</p></div>
+                                        <div class="p-2 bg-slate-800/50 rounded-lg"><p class="text-[9px] text-slate-500">Current Value</p><p class="font-bold text-green-500">$6,420</p></div>
+                                    </div>
+                                    <p class="text-xs font-semibold text-white mt-4 mb-2">Daily Returns</p>
+                                    <div class="space-y-1">
+                                        <div class="flex justify-between text-sm"><span class="text-slate-400">Mon 1</span><span class="text-green-500">+$175</span></div>
+                                        <div class="flex justify-between text-sm"><span class="text-slate-400">Mon 2</span><span class="text-green-500">+$181</span></div>
+                                        <div class="flex justify-between text-sm"><span class="text-slate-400">Mon 3</span><span class="text-green-500">+$187</span></div>
+                                        <div class="flex justify-between text-sm"><span class="text-slate-400">Mon 4</span><span class="text-green-500">+$194</span></div>
+                                        <div class="flex justify-between text-sm"><span class="text-slate-400">Mon 5</span><span class="text-green-500">+$201</span></div>
+                                        <div class="flex justify-between text-sm"><span class="text-slate-400">Mon 6</span><span class="text-green-500">+$208</span></div>
+                                    </div>
                                 </div>
-                                <div class="flex flex-col items-center gap-0.5 cursor-pointer group">
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="text-slate-500 group-hover:text-blue-500 transition"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
-                                    <span class="text-[7px] font-medium text-slate-500 group-hover:text-blue-500">Profile</span>
+                                <div class="shrink-0 border-t border-slate-800/80 bg-slate-950/95 px-4 py-2 flex items-center justify-between">
+                                    <div class="flex flex-col items-center gap-0.5"><svg class="w-4 h-4 text-slate-500" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="m2.25 12 8.954-8.955c.44-.439 1.152-.439 1.591 0L21.75 12M4.5 9.75v10.125c0 .621.504 1.125 1.125 1.125H9.75v-4.875c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125V21h4.125c.621 0 1.125-.504 1.125-1.125V9.75M8.25 21h8.25"/></svg><span class="text-[7px] text-slate-500 font-medium">Home</span></div>
+                                    <div class="flex flex-col items-center gap-0.5"><svg class="w-4 h-4 text-blue-400" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M3 13.125C3 12.504 3.504 12 4.125 12h2.25c.621 0 1.125.504 1.125 1.125v6.75C7.5 20.496 6.996 21 6.375 21h-2.25A1.125 1.125 0 0 1 3 19.875v-6.75ZM9.75 8.625c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125v11.25c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 0 1-1.125-1.125V8.625ZM16.5 4.125c0-.621.504-1.125 1.125-1.125h2.25C20.496 3 21 3.504 21 4.125v15.75c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 0 1-1.125-1.125V4.125Z"/></svg><span class="text-[7px] text-blue-400 font-medium">Plans</span></div>
+                                    <div class="flex flex-col items-center gap-0.5"><svg class="w-4 h-4 text-slate-500" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M21 12a2.25 2.25 0 0 0-2.25-2.25H15a3 3 0 1 1-6 0H5.25A2.25 2.25 0 0 0 3 12m18 0v6a2.25 2.25 0 0 1-2.25 2.25H5.25A2.25 2.25 0 0 1 3 18v-6m18 0V9M3 12V9m18 0a2.25 2.25 0 0 0-2.25-2.25H5.25A2.25 2.25 0 0 0 3 9m18 0V6a2.25 2.25 0 0 0-2.25-2.25H5.25A2.25 2.25 0 0 0 3 6v3"/></svg><span class="text-[7px] text-slate-500 font-medium">Wallet</span></div>
+                                    <div class="flex flex-col items-center gap-0.5"><svg class="w-4 h-4 text-slate-500" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 6a3.75 3.75 0 1 1-7.5 0 3.75 3.75 0 0 1 7.5 0ZM4.501 20.118a7.5 7.5 0 0 1 14.998 0A17.933 17.933 0 0 1 12 21.75c-2.676 0-5.216-.584-7.499-1.632Z"/></svg><span class="text-[7px] text-slate-500 font-medium">Profile</span></div>
                                 </div>
+                                <div class="flex justify-center pb-2 pt-0.5 shrink-0"><div class="w-24 h-1 bg-white/20 rounded-full"></div></div>
                             </div>
-                            <div class="flex justify-center pb-2 pt-0.5 shrink-0">
-                                <div class="w-24 h-1 bg-white/20 rounded-full"></div>
+
+                            <!-- Page Indicator Dots -->
+                            <div class="absolute bottom-[4.5rem] left-0 right-0 z-30 phone-dots">
+                                <span class="phone-dot active" data-index="0"></span>
+                                <span class="phone-dot" data-index="1"></span>
+                                <span class="phone-dot" data-index="2"></span>
+                                <span class="phone-dot" data-index="3"></span>
                             </div>
+
                         </div>
                     </div>
                     <div class="absolute -top-12 -right-12 size-72 bg-blue-500/10 rounded-full blur-3xl -z-10 animate-pulse-slow"></div>
@@ -596,7 +697,7 @@
                             <a href="/register" class="mt-5 block w-full text-center py-3 rounded-lg text-sm font-semibold transition-colors bg-slate-100 text-slate-700 hover:bg-slate-200">Select Plan</a>
                         </div>
 
-                        <!-- 8888 Investment (Popular) -->
+                        <!-- 8888 Investment -->
                         <div class="bg-white rounded-xl border border-slate-300 ring-1 ring-slate-200 p-6 relative gsap-plan-card">
                             <div class="absolute top-0 right-5 -translate-y-1/2"><span class="inline-flex items-center bg-slate-900 text-white text-[10px] font-semibold px-3 py-1 rounded-full tracking-wider uppercase">Most Selected</span></div>
                             <div class="mb-5 mt-1">
@@ -612,7 +713,7 @@
                             <a href="/register" class="mt-5 block w-full text-center py-3 rounded-lg text-sm font-semibold transition-colors bg-slate-900 text-white hover:bg-slate-800">Select Plan</a>
                         </div>
 
-                        <!-- Tier 3 Investment (Popular) -->
+                        <!-- Tier 3 Investment -->
                         <div class="bg-white rounded-xl border border-slate-300 ring-1 ring-slate-200 p-6 relative gsap-plan-card">
                             <div class="absolute top-0 right-5 -translate-y-1/2"><span class="inline-flex items-center bg-slate-900 text-white text-[10px] font-semibold px-3 py-1 rounded-full tracking-wider uppercase">Most Selected</span></div>
                             <div class="mb-5 mt-1">
@@ -628,7 +729,7 @@
                             <a href="/register" class="mt-5 block w-full text-center py-3 rounded-lg text-sm font-semibold transition-colors bg-slate-900 text-white hover:bg-slate-800">Select Plan</a>
                         </div>
 
-                        <!-- Bitcoin Elite Group (Popular) -->
+                        <!-- Bitcoin Elite Group -->
                         <div class="bg-white rounded-xl border border-slate-300 ring-1 ring-slate-200 p-6 relative gsap-plan-card">
                             <div class="absolute top-0 right-5 -translate-y-1/2"><span class="inline-flex items-center bg-slate-900 text-white text-[10px] font-semibold px-3 py-1 rounded-full tracking-wider uppercase">Most Selected</span></div>
                             <div class="mb-5 mt-1">
@@ -645,7 +746,7 @@
                         </div>
                     </div>
 
-                    <!-- Mobile plan cards (simplified) -->
+                    <!-- Mobile plan cards -->
                     <div class="sm:hidden space-y-4">
                         <div class="bg-white rounded-xl border border-slate-200/80 p-4">
                             <h3 class="text-sm font-bold text-slate-900">108 Circle</h3>
@@ -683,7 +784,7 @@
                     </div>
                 </div>
 
-                <!-- Sidebar Phone (desktop) – Select Plan -->
+                <!-- Sidebar Phone – Select Plan -->
                 <div class="hidden lg:block lg:col-span-4 relative parallax-layer" data-parallax-speed="0.03">
                     <div class="sticky top-8">
                         <div class="relative mx-auto" style="max-width:260px">
@@ -694,7 +795,6 @@
                                         <div class="bg-black rounded-[2.3rem] overflow-hidden">
                                             <div class="absolute top-3 left-1/2 -translate-x-1/2 z-10 w-[85px] h-[24px] bg-black rounded-full" style="box-shadow: inset 0 0 0 1px rgba(255,255,255,0.04);"></div>
                                             <div class="relative bg-slate-950">
-                                                <!-- Status Bar -->
                                                 <div class="flex items-center justify-between px-7 pt-3 pb-0.5">
                                                     <span class="text-[10px] font-semibold text-white/80 tabular-nums">9:41</span>
                                                     <div class="flex items-center gap-1">
@@ -702,76 +802,36 @@
                                                         <div class="w-6 h-2.5 border border-white/50 rounded-[2px] ml-0.5 relative"><div class="absolute inset-[1.5px] right-[2px] bg-white/80 rounded-[1px]" style="width:70%"></div></div>
                                                     </div>
                                                 </div>
-
-                                                <!-- Header: XSpaceFinance + Avatar -->
                                                 <div class="flex items-center justify-between px-4 pt-2 pb-1">
                                                     <span class="text-[11px] font-bold text-white">XSpaceFinance</span>
                                                     <div class="size-7 rounded-full bg-slate-800 grid place-items-center border border-slate-700">
                                                         <span class="text-[9px] font-bold text-slate-400">JD</span>
                                                     </div>
                                                 </div>
-
-                                                <!-- Content: Select Plan -->
                                                 <div class="px-4 pb-3">
                                                     <p class="text-[11px] font-bold text-white mb-3">Select Plan</p>
                                                     <div class="space-y-2.5">
-                                                        <!-- 108 Circle (Selected) -->
                                                         <div class="plan-card-phone p-2.5 rounded-xl border-2 border-blue-500 bg-blue-500/10">
-                                                            <div class="flex justify-between items-start">
-                                                                <div>
-                                                                    <p class="font-bold text-white text-xs">108 Circle</p>
-                                                                    <p class="text-[8px] text-slate-400">1 month · Simple</p>
-                                                                </div>
-                                                                <span class="text-[8px] font-bold text-blue-400">200%</span>
-                                                            </div>
-                                                            <div class="flex justify-between mt-1">
-                                                                <span class="text-[8px] text-slate-500">$100 – $2,221</span>
-                                                                <span class="text-[8px] font-bold text-blue-400">SELECTED</span>
-                                                            </div>
+                                                            <div class="flex justify-between items-start"><div><p class="font-bold text-white text-xs">108 Circle</p><p class="text-[8px] text-slate-400">1 month · Simple</p></div><span class="text-[8px] font-bold text-blue-400">200%</span></div>
+                                                            <div class="flex justify-between mt-1"><span class="text-[8px] text-slate-500">$100 – $2,221</span><span class="text-[8px] font-bold text-blue-400">SELECTED</span></div>
                                                         </div>
-                                                        <!-- 8888 Investment (Popular) -->
                                                         <div class="plan-card-phone p-2.5 rounded-xl border border-slate-700 relative">
-                                                            <div class="absolute -top-1.5 right-2.5">
-                                                                <span class="bg-blue-500 text-[6px] text-white font-bold px-1.5 py-0.5 rounded-full uppercase tracking-wider">Popular</span>
-                                                            </div>
-                                                            <div class="flex justify-between items-start">
-                                                                <div>
-                                                                    <p class="font-bold text-white text-xs">8888 Investment</p>
-                                                                    <p class="text-[8px] text-slate-400">1 month · Simple</p>
-                                                                </div>
-                                                                <span class="text-[8px] font-bold text-blue-400">300%</span>
-                                                            </div>
-                                                            <div class="flex justify-between mt-1">
-                                                                <span class="text-[8px] text-slate-500">$8,000 – $14,999</span>
-                                                            </div>
+                                                            <div class="absolute -top-1.5 right-2.5"><span class="bg-blue-500 text-[6px] text-white font-bold px-1.5 py-0.5 rounded-full uppercase tracking-wider">Popular</span></div>
+                                                            <div class="flex justify-between items-start"><div><p class="font-bold text-white text-xs">8888 Investment</p><p class="text-[8px] text-slate-400">1 month · Simple</p></div><span class="text-[8px] font-bold text-blue-400">300%</span></div>
+                                                            <div class="flex justify-between mt-1"><span class="text-[8px] text-slate-500">$8,000 – $14,999</span></div>
                                                         </div>
-                                                        <!-- Bitcoin Elite Group (Popular) -->
                                                         <div class="plan-card-phone p-2.5 rounded-xl border border-slate-700 relative">
-                                                            <div class="absolute -top-1.5 right-2.5">
-                                                                <span class="bg-blue-500 text-[6px] text-white font-bold px-1.5 py-0.5 rounded-full uppercase tracking-wider">Popular</span>
-                                                            </div>
-                                                            <div class="flex justify-between items-start">
-                                                                <div>
-                                                                    <p class="font-bold text-white text-xs">Bitcoin Elite Group</p>
-                                                                    <p class="text-[8px] text-slate-400">2 weeks · Simple</p>
-                                                                </div>
-                                                                <span class="text-[8px] font-bold text-blue-400">750%</span>
-                                                            </div>
-                                                            <div class="flex justify-between mt-1">
-                                                                <span class="text-[8px] text-slate-500">$20,000 – $999,999,999</span>
-                                                            </div>
+                                                            <div class="absolute -top-1.5 right-2.5"><span class="bg-blue-500 text-[6px] text-white font-bold px-1.5 py-0.5 rounded-full uppercase tracking-wider">Popular</span></div>
+                                                            <div class="flex justify-between items-start"><div><p class="font-bold text-white text-xs">Bitcoin Elite Group</p><p class="text-[8px] text-slate-400">2 weeks · Simple</p></div><span class="text-[8px] font-bold text-blue-400">750%</span></div>
+                                                            <div class="flex justify-between mt-1"><span class="text-[8px] text-slate-500">$20,000 – $999,999,999</span></div>
                                                         </div>
                                                     </div>
-
-                                                    <!-- Investment Amount -->
                                                     <div class="mt-3 pt-3 border-t border-slate-800/60">
                                                         <p class="text-[8px] text-slate-500 mb-1">Investment Amount</p>
                                                         <p class="text-2xl font-bold text-white">$5,000</p>
                                                         <button class="w-full mt-2 py-2.5 bg-blue-600 rounded-lg text-sm font-semibold text-white hover:bg-blue-700 transition">Activate Investment</button>
                                                     </div>
                                                 </div>
-
-                                                <!-- Bottom Nav -->
                                                 <div class="flex items-center justify-around px-4 py-2 border-t border-slate-800/60">
                                                     <div class="flex flex-col items-center gap-px"><svg class="w-4 h-4 text-slate-600" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="m2.25 12 8.954-8.955c.44-.439 1.152-.439 1.591 0L21.75 12M4.5 9.75v10.125c0 .621.504 1.125 1.125 1.125H9.75v-4.875c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125V21h4.125c.621 0 1.125-.504 1.125-1.125V9.75M8.25 21h8.25"/></svg><span class="text-[7px] text-slate-600 font-medium">Home</span></div>
                                                     <div class="flex flex-col items-center gap-px"><svg class="w-4 h-4 text-blue-400" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M3 13.125C3 12.504 3.504 12 4.125 12h2.25c.621 0 1.125.504 1.125 1.125v6.75C7.5 20.496 6.996 21 6.375 21h-2.25A1.125 1.125 0 0 1 3 19.875v-6.75ZM9.75 8.625c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125v11.25c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 0 1-1.125-1.125V8.625ZM16.5 4.125c0-.621.504-1.125 1.125-1.125h2.25C20.496 3 21 3.504 21 4.125v15.75c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 0 1-1.125-1.125V4.125Z"/></svg><span class="text-[7px] text-blue-400 font-medium">Plans</span></div>
@@ -796,7 +856,7 @@
         </div>
     </section>
 
-    <!-- Calculator section -->
+    <!-- Calculator -->
     <section class="py-20 lg:py-28 bg-white" id="sec-calc">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div class="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-20 items-center">
@@ -845,7 +905,7 @@
         </div>
     </section>
 
-    <!-- ===== ACTIVITY & NOTIFICATIONS ===== -->
+    <!-- Activity & Notifications -->
     <section class="py-20 lg:py-28 bg-slate-900 border-y border-slate-800" id="sec-activity">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div class="max-w-2xl mb-12">
@@ -853,89 +913,45 @@
                 <h2 class="text-3xl sm:text-4xl font-bold text-white tracking-tight">Real‑time transaction feed</h2>
                 <p class="mt-4 text-base text-slate-400 leading-relaxed">Every login, deposit, investment, credit, and withdrawal is logged and displayed here. Full visibility, always.</p>
             </div>
-
             <div class="bg-slate-800/50 rounded-2xl border border-slate-700/50 overflow-hidden">
                 <div class="max-h-[400px] overflow-y-auto no-scrollbar">
                     <div class="transaction-item flex items-start gap-4 px-6 py-4 border-b border-slate-700/50 animate-slide-in-left">
                         <div class="tx-icon bg-blue-500/10 text-blue-400"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></div>
-                        <div class="flex-1 min-w-0">
-                            <p class="text-sm font-semibold text-white">Login</p>
-                            <p class="text-xs text-slate-400">Chrome on Windows · IP 192.168.1.1</p>
-                        </div>
-                        <div class="text-right flex-shrink-0">
-                            <span class="status-badge completed">Completed</span>
-                            <p class="text-[10px] text-slate-500 mt-1">2 mins ago</p>
-                        </div>
+                        <div class="flex-1 min-w-0"><p class="text-sm font-semibold text-white">Login</p><p class="text-xs text-slate-400">Chrome on Windows · IP 192.168.1.1</p></div>
+                        <div class="text-right flex-shrink-0"><span class="status-badge completed">Completed</span><p class="text-[10px] text-slate-500 mt-1">2 mins ago</p></div>
                     </div>
-                    <div class="transaction-item flex items-start gap-4 px-6 py-4 border-b border-slate-700/50 animate-slide-in-left" style="animation-delay: 0.1s;">
+                    <div class="transaction-item flex items-start gap-4 px-6 py-4 border-b border-slate-700/50 animate-slide-in-left" style="animation-delay:0.1s">
                         <div class="tx-icon bg-emerald-500/10 text-emerald-400"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v4"/><path d="M12 18v4"/><path d="M4.93 4.93l2.83 2.83"/><path d="M16.24 16.24l2.83 2.83"/><path d="M2 12h4"/><path d="M18 12h4"/><path d="M4.93 19.07l2.83-2.83"/><path d="M16.24 7.76l2.83-2.83"/></svg></div>
-                        <div class="flex-1 min-w-0">
-                            <p class="text-sm font-semibold text-white">Investment Activated</p>
-                            <p class="text-xs text-slate-400">Started "8888 Investment" · $8,000 · Start Date: 2026-06-17</p>
-                        </div>
-                        <div class="text-right flex-shrink-0">
-                            <span class="status-badge active">Active</span>
-                            <p class="text-[10px] text-slate-500 mt-1">15 mins ago</p>
-                        </div>
+                        <div class="flex-1 min-w-0"><p class="text-sm font-semibold text-white">Investment Activated</p><p class="text-xs text-slate-400">Started "8888 Investment" · $8,000 · Start Date: 2026-06-17</p></div>
+                        <div class="text-right flex-shrink-0"><span class="status-badge active">Active</span><p class="text-[10px] text-slate-500 mt-1">15 mins ago</p></div>
                     </div>
-                    <div class="transaction-item flex items-start gap-4 px-6 py-4 border-b border-slate-700/50 animate-slide-in-left" style="animation-delay: 0.2s;">
+                    <div class="transaction-item flex items-start gap-4 px-6 py-4 border-b border-slate-700/50 animate-slide-in-left" style="animation-delay:0.2s">
                         <div class="tx-icon bg-green-500/10 text-green-400"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v20"/><path d="M17 7H7"/><path d="M17 12H7"/><path d="M17 17H7"/></svg></div>
-                        <div class="flex-1 min-w-0">
-                            <p class="text-sm font-semibold text-white">Deposit Credited</p>
-                            <p class="text-xs text-slate-400">$3,000 via Bitcoin · TXN: #BTC-8821</p>
-                        </div>
-                        <div class="text-right flex-shrink-0">
-                            <span class="status-badge completed">Completed</span>
-                            <p class="text-[10px] text-slate-500 mt-1">1 hour ago</p>
-                        </div>
+                        <div class="flex-1 min-w-0"><p class="text-sm font-semibold text-white">Deposit Credited</p><p class="text-xs text-slate-400">$3,000 via Bitcoin · TXN: #BTC-8821</p></div>
+                        <div class="text-right flex-shrink-0"><span class="status-badge completed">Completed</span><p class="text-[10px] text-slate-500 mt-1">1 hour ago</p></div>
                     </div>
-                    <div class="transaction-item flex items-start gap-4 px-6 py-4 border-b border-slate-700/50 animate-slide-in-left" style="animation-delay: 0.3s;">
+                    <div class="transaction-item flex items-start gap-4 px-6 py-4 border-b border-slate-700/50 animate-slide-in-left" style="animation-delay:0.3s">
                         <div class="tx-icon bg-blue-500/10 text-blue-400"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"/><path d="m9 12 2 2 4-4"/></svg></div>
-                        <div class="flex-1 min-w-0">
-                            <p class="text-sm font-semibold text-white">Daily Return Credited</p>
-                            <p class="text-xs text-slate-400">+$9.70 to wallet · Compounding active</p>
-                        </div>
-                        <div class="text-right flex-shrink-0">
-                            <span class="status-badge completed">Completed</span>
-                            <p class="text-[10px] text-slate-500 mt-1">3 hours ago</p>
-                        </div>
+                        <div class="flex-1 min-w-0"><p class="text-sm font-semibold text-white">Daily Return Credited</p><p class="text-xs text-slate-400">+$9.70 to wallet · Compounding active</p></div>
+                        <div class="text-right flex-shrink-0"><span class="status-badge completed">Completed</span><p class="text-[10px] text-slate-500 mt-1">3 hours ago</p></div>
                     </div>
-                    <div class="transaction-item flex items-start gap-4 px-6 py-4 border-b border-slate-700/50 animate-slide-in-left" style="animation-delay: 0.4s;">
+                    <div class="transaction-item flex items-start gap-4 px-6 py-4 border-b border-slate-700/50 animate-slide-in-left" style="animation-delay:0.4s">
                         <div class="tx-icon bg-amber-500/10 text-amber-400"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 7V4a1 1 0 0 0-1-1H5a2 2 0 0 0 0 4h15a1 1 0 0 1 1 1v4h-3a2 2 0 0 0 0 4h3a1 1 0 0 0 1-1v-2a1 1 0 0 0-1-1"/><path d="M3 5v14a2 2 0 0 0 2 2h15a1 1 0 0 0 1-1v-4"/></svg></div>
-                        <div class="flex-1 min-w-0">
-                            <p class="text-sm font-semibold text-white">Withdrawal Requested</p>
-                            <p class="text-xs text-slate-400">$14,280.00 to BTC Wallet · TXN: #WD-992</p>
-                        </div>
-                        <div class="text-right flex-shrink-0">
-                            <span class="status-badge pending">Pending</span>
-                            <p class="text-[10px] text-slate-500 mt-1">6 hours ago</p>
-                        </div>
+                        <div class="flex-1 min-w-0"><p class="text-sm font-semibold text-white">Withdrawal Requested</p><p class="text-xs text-slate-400">$14,280.00 to BTC Wallet · TXN: #WD-992</p></div>
+                        <div class="text-right flex-shrink-0"><span class="status-badge pending">Pending</span><p class="text-[10px] text-slate-500 mt-1">6 hours ago</p></div>
                     </div>
-                    <div class="transaction-item flex items-start gap-4 px-6 py-4 border-b border-slate-700/50 animate-slide-in-left" style="animation-delay: 0.5s;">
+                    <div class="transaction-item flex items-start gap-4 px-6 py-4 border-b border-slate-700/50 animate-slide-in-left" style="animation-delay:0.5s">
                         <div class="tx-icon bg-red-500/10 text-red-400"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 8v4"/><path d="M12 16h.01"/></svg></div>
-                        <div class="flex-1 min-w-0">
-                            <p class="text-sm font-semibold text-white">Investment Failed</p>
-                            <p class="text-xs text-red-400">SQLITE_CONSTRAINT: NOT NULL constraint failed: investments.start_date</p>
-                        </div>
-                        <div class="text-right flex-shrink-0">
-                            <span class="status-badge failed">Failed</span>
-                            <p class="text-[10px] text-slate-500 mt-1">1 day ago</p>
-                        </div>
+                        <div class="flex-1 min-w-0"><p class="text-sm font-semibold text-white">Investment Failed</p><p class="text-xs text-red-400">SQLITE_CONSTRAINT: NOT NULL constraint failed: investments.start_date</p></div>
+                        <div class="text-right flex-shrink-0"><span class="status-badge failed">Failed</span><p class="text-[10px] text-slate-500 mt-1">1 day ago</p></div>
                     </div>
-                    <div class="transaction-item flex items-start gap-4 px-6 py-4 animate-slide-in-left" style="animation-delay: 0.6s;">
+                    <div class="transaction-item flex items-start gap-4 px-6 py-4 animate-slide-in-left" style="animation-delay:0.6s">
                         <div class="tx-icon bg-purple-500/10 text-purple-400"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"/><path d="m9 12 2 2 4-4"/></svg></div>
-                        <div class="flex-1 min-w-0">
-                            <p class="text-sm font-semibold text-white">Investment Matured</p>
-                            <p class="text-xs text-slate-400">"108 Circle" · +$2,000 profit · Total: $3,000</p>
-                        </div>
-                        <div class="text-right flex-shrink-0">
-                            <span class="status-badge completed">Completed</span>
-                            <p class="text-[10px] text-slate-500 mt-1">2 days ago</p>
-                        </div>
+                        <div class="flex-1 min-w-0"><p class="text-sm font-semibold text-white">Investment Matured</p><p class="text-xs text-slate-400">"108 Circle" · +$2,000 profit · Total: $3,000</p></div>
+                        <div class="text-right flex-shrink-0"><span class="status-badge completed">Completed</span><p class="text-[10px] text-slate-500 mt-1">2 days ago</p></div>
                     </div>
                 </div>
             </div>
-
             <div class="mt-8 text-center">
                 <button onclick="alert('Showing all 28 transactions.')" class="inline-flex items-center gap-2 text-sm font-semibold text-blue-400 hover:text-blue-300 transition-colors">View all activity <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg></button>
             </div>
@@ -947,26 +963,10 @@
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div class="max-w-2xl mx-auto text-center mb-16 gsap-heading"><h2 class="text-3xl sm:text-4xl font-bold text-white tracking-tight">Security and transparency at every level</h2><p class="mt-4 text-base text-slate-400 leading-relaxed">Every action on the platform is verified, recorded, and communicated. You maintain full visibility over your account.</p></div>
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-5 lg:gap-6">
-                <div class="bg-slate-900/60 rounded-xl p-7 border border-slate-800/60 gsap-security-card">
-                    <div class="w-10 h-10 rounded-lg bg-slate-800 flex items-center justify-center mb-5"><svg class="w-5 h-5 text-slate-400" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15 9h3.75M15 12h3.75M15 15h3.75M4.5 19.5h15a2.25 2.25 0 0 0 2.25-2.25V6.75A2.25 2.25 0 0 0 19.5 4.5h-15a2.25 2.25 0 0 0-2.25 2.25v10.5A2.25 2.25 0 0 0 4.5 19.5Zm6-10.125a1.875 1.875 0 1 1-3.75 0 1.875 1.875 0 0 1 3.75 0Zm1.294 6.336a6.721 6.721 0 0 1-3.17.789 6.721 6.721 0 0 1-3.168-.789 3.376 3.376 0 0 1 6.338 0Z"/></svg></div>
-                    <h3 class="text-base font-semibold text-white mb-2">Identity Verification (KYC)</h3>
-                    <p class="text-sm text-slate-400 leading-relaxed">All users undergo identity verification before withdrawals are enabled. Accepted documents include passport, national ID, and driver's license.</p>
-                </div>
-                <div class="bg-slate-900/60 rounded-xl p-7 border border-slate-800/60 gsap-security-card">
-                    <div class="w-10 h-10 rounded-lg bg-slate-800 flex items-center justify-center mb-5"><svg class="w-5 h-5 text-slate-400" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 1 0-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 0 0 2.25-2.25v-6.75a2.25 2.25 0 0 0-2.25-2.25H6.75a2.25 2.25 0 0 0-2.25 2.25v6.75a2.25 2.25 0 0 0 2.25 2.25Z"/></svg></div>
-                    <h3 class="text-base font-semibold text-white mb-2">Secure Withdrawals</h3>
-                    <p class="text-sm text-slate-400 leading-relaxed">Withdrawal requests are processed within 24-48 business hours. All outgoing transfers are reviewed before execution. Bank and cryptocurrency withdrawals are supported.</p>
-                </div>
-                <div class="bg-slate-900/60 rounded-xl p-7 border border-slate-800/60 gsap-security-card">
-                    <div class="w-10 h-10 rounded-lg bg-slate-800 flex items-center justify-center mb-5"><svg class="w-5 h-5 text-slate-400" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 0 0-3.375-3.375h-1.5A1.125 1.125 0 0 1 13.5 7.125v-1.5a3.375 3.375 0 0 0-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 0 0-9-9Z"/></svg></div>
-                    <h3 class="text-base font-semibold text-slate-900 dark:text-white mb-2">Audit-Grade Transaction History</h3>
-                    <p class="text-sm text-slate-400 leading-relaxed">Every deposit, withdrawal, investment activation, and return credit is recorded with a unique reference code. Your full transaction history is always accessible.</p>
-                </div>
-                <div class="bg-slate-900/60 rounded-xl p-7 border border-slate-800/60 gsap-security-card">
-                    <div class="w-10 h-10 rounded-lg bg-slate-800 flex items-center justify-center mb-5"><svg class="w-5 h-5 text-slate-400" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M14.857 17.082a23.848 23.848 0 0 0 5.454-1.31A8.967 8.967 0 0 1 18 9.75V9A6 6 0 0 0 6 9v.75a8.967 8.967 0 0 1-2.312 6.022c1.733.64 3.56 1.085 5.455 1.31m5.714 0a24.255 24.255 0 0 1-5.714 0m5.714 0a3 3 0 1 1-5.714 0"/></svg></div>
-                    <h3 class="text-base font-semibold text-white mb-2">Notifications for Every Action</h3>
-                    <p class="text-sm text-slate-400 leading-relaxed">Receive email notifications for sign-ins, deposit confirmations, investment activations, withdrawal processing, KYC status updates, and daily income reports.</p>
-                </div>
+                <div class="bg-slate-900/60 rounded-xl p-7 border border-slate-800/60"><div class="w-10 h-10 rounded-lg bg-slate-800 flex items-center justify-center mb-5"><svg class="w-5 h-5 text-slate-400" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15 9h3.75M15 12h3.75M15 15h3.75M4.5 19.5h15a2.25 2.25 0 0 0 2.25-2.25V6.75A2.25 2.25 0 0 0 19.5 4.5h-15a2.25 2.25 0 0 0-2.25 2.25v10.5A2.25 2.25 0 0 0 4.5 19.5Zm6-10.125a1.875 1.875 0 1 1-3.75 0 1.875 1.875 0 0 1 3.75 0Zm1.294 6.336a6.721 6.721 0 0 1-3.17.789 6.721 6.721 0 0 1-3.168-.789 3.376 3.376 0 0 1 6.338 0Z"/></svg></div><h3 class="text-base font-semibold text-white mb-2">Identity Verification (KYC)</h3><p class="text-sm text-slate-400 leading-relaxed">All users undergo identity verification before withdrawals are enabled. Accepted documents include passport, national ID, and driver's license.</p></div>
+                <div class="bg-slate-900/60 rounded-xl p-7 border border-slate-800/60"><div class="w-10 h-10 rounded-lg bg-slate-800 flex items-center justify-center mb-5"><svg class="w-5 h-5 text-slate-400" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 1 0-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 0 0 2.25-2.25v-6.75a2.25 2.25 0 0 0-2.25-2.25H6.75a2.25 2.25 0 0 0-2.25 2.25v6.75a2.25 2.25 0 0 0 2.25 2.25Z"/></svg></div><h3 class="text-base font-semibold text-white mb-2">Secure Withdrawals</h3><p class="text-sm text-slate-400 leading-relaxed">Withdrawal requests are processed within 24-48 business hours. All outgoing transfers are reviewed before execution. Bank and cryptocurrency withdrawals are supported.</p></div>
+                <div class="bg-slate-900/60 rounded-xl p-7 border border-slate-800/60"><div class="w-10 h-10 rounded-lg bg-slate-800 flex items-center justify-center mb-5"><svg class="w-5 h-5 text-slate-400" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 0 0-3.375-3.375h-1.5A1.125 1.125 0 0 1 13.5 7.125v-1.5a3.375 3.375 0 0 0-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 0 0-9-9Z"/></svg></div><h3 class="text-base font-semibold text-slate-900 dark:text-white mb-2">Audit-Grade Transaction History</h3><p class="text-sm text-slate-400 leading-relaxed">Every deposit, withdrawal, investment activation, and return credit is recorded with a unique reference code. Your full transaction history is always accessible.</p></div>
+                <div class="bg-slate-900/60 rounded-xl p-7 border border-slate-800/60"><div class="w-10 h-10 rounded-lg bg-slate-800 flex items-center justify-center mb-5"><svg class="w-5 h-5 text-slate-400" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M14.857 17.082a23.848 23.848 0 0 0 5.454-1.31A8.967 8.967 0 0 1 18 9.75V9A6 6 0 0 0 6 9v.75a8.967 8.967 0 0 1-2.312 6.022c1.733.64 3.56 1.085 5.455 1.31m5.714 0a24.255 24.255 0 0 1-5.714 0m5.714 0a3 3 0 1 1-5.714 0"/></svg></div><h3 class="text-base font-semibold text-white mb-2">Notifications for Every Action</h3><p class="text-sm text-slate-400 leading-relaxed">Receive email notifications for sign-ins, deposit confirmations, investment activations, withdrawal processing, KYC status updates, and daily income reports.</p></div>
             </div>
         </div>
     </section>
@@ -985,47 +985,17 @@
     <footer class="dark-preserve bg-slate-950 text-slate-400">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div class="py-16 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-10 lg:gap-12">
-                <div><a href="/" class="text-xl font-extrabold tracking-tight bg-gradient-to-r from-white via-blue-200 to-white bg-clip-text text-transparent">XSpaceFinance</a>
-                    <p class="mt-4 text-sm leading-relaxed">Fixed-duration investment plans with transparent returns. Serving individual investors in the United States, United Kingdom, and Canada.</p>
-                </div>
-                <div>
-                    <h4 class="text-sm font-semibold text-white uppercase tracking-wider mb-4">Platform</h4>
-                    <ul class="space-y-3 text-sm">
-                        <li><a href="/plans" class="hover:text-white transition-colors">Investment Plans</a></li>
-                        <li><a href="/calculator" class="hover:text-white transition-colors">ROI Calculator</a></li>
-                        <li><a href="/about" class="hover:text-white transition-colors">About Us</a></li>
-                        <li><a href="/register" class="hover:text-white transition-colors">Create Account</a></li>
-                    </ul>
-                </div>
-                <div>
-                    <h4 class="text-sm font-semibold text-white uppercase tracking-wider mb-4">Legal</h4>
-                    <ul class="space-y-3 text-sm">
-                        <li><a href="/privacy-policy" class="hover:text-white transition-colors">Privacy Policy</a></li>
-                        <li><a href="/terms-of-service" class="hover:text-white transition-colors">Terms of Service</a></li>
-                        <li><a href="/risk-disclosure" class="hover:text-white transition-colors">Risk Disclosure</a></li>
-                        <li><a href="/cookie-policy" class="hover:text-white transition-colors">Cookie Policy</a></li>
-                    </ul>
-                </div>
-                <div>
-                    <h4 class="text-sm font-semibold text-white uppercase tracking-wider mb-4">Countries</h4>
-                    <ul class="space-y-3 text-sm">
-                        <li class="flex items-center gap-2"><img src="https://flagcdn.com/w40/us.png" alt="US" class="w-5 h-auto rounded-sm">United States</li>
-                        <li class="flex items-center gap-2"><img src="https://flagcdn.com/w40/gb.png" alt="UK" class="w-5 h-auto rounded-sm">United Kingdom</li>
-                        <li class="flex items-center gap-2"><img src="https://flagcdn.com/w40/ca.png" alt="CA" class="w-5 h-auto rounded-sm">Canada</li>
-                    </ul>
-                </div>
+                <div><a href="/" class="text-xl font-extrabold tracking-tight bg-gradient-to-r from-white via-blue-200 to-white bg-clip-text text-transparent">XSpaceFinance</a><p class="mt-4 text-sm leading-relaxed">Fixed-duration investment plans with transparent returns. Serving individual investors in the United States, United Kingdom, and Canada.</p></div>
+                <div><h4 class="text-sm font-semibold text-white uppercase tracking-wider mb-4">Platform</h4><ul class="space-y-3 text-sm"><li><a href="/plans" class="hover:text-white transition-colors">Investment Plans</a></li><li><a href="/calculator" class="hover:text-white transition-colors">ROI Calculator</a></li><li><a href="/about" class="hover:text-white transition-colors">About Us</a></li><li><a href="/register" class="hover:text-white transition-colors">Create Account</a></li></ul></div>
+                <div><h4 class="text-sm font-semibold text-white uppercase tracking-wider mb-4">Legal</h4><ul class="space-y-3 text-sm"><li><a href="/privacy-policy" class="hover:text-white transition-colors">Privacy Policy</a></li><li><a href="/terms-of-service" class="hover:text-white transition-colors">Terms of Service</a></li><li><a href="/risk-disclosure" class="hover:text-white transition-colors">Risk Disclosure</a></li><li><a href="/cookie-policy" class="hover:text-white transition-colors">Cookie Policy</a></li></ul></div>
+                <div><h4 class="text-sm font-semibold text-white uppercase tracking-wider mb-4">Countries</h4><ul class="space-y-3 text-sm"><li class="flex items-center gap-2"><img src="https://flagcdn.com/w40/us.png" alt="US" class="w-5 h-auto rounded-sm">United States</li><li class="flex items-center gap-2"><img src="https://flagcdn.com/w40/gb.png" alt="UK" class="w-5 h-auto rounded-sm">United Kingdom</li><li class="flex items-center gap-2"><img src="https://flagcdn.com/w40/ca.png" alt="CA" class="w-5 h-auto rounded-sm">Canada</li></ul></div>
             </div>
-            <div class="border-t border-slate-800 py-8">
-                <div class="flex flex-col md:flex-row items-center justify-between gap-4 text-sm">
-                    <p>&copy; 2026 XSpaceFinance. All rights reserved.</p>
-                    <p class="text-slate-500 text-xs text-center md:text-right max-w-lg">All investments carry risk. Projected returns are based on stated rates and are not guaranteed. Past performance does not guarantee future results.</p>
-                </div>
-            </div>
+            <div class="border-t border-slate-800 py-8"><div class="flex flex-col md:flex-row items-center justify-between gap-4 text-sm"><p>&copy; 2026 XSpaceFinance. All rights reserved.</p><p class="text-slate-500 text-xs text-center md:text-right max-w-lg">All investments carry risk. Projected returns are based on stated rates and are not guaranteed. Past performance does not guarantee future results.</p></div></div>
         </div>
     </footer>
 
     <script>
-        // Mobile menu toggle
+        // Mobile menu
         document.getElementById('mobile-menu-btn')?.addEventListener('click', function() {
             var menu = document.getElementById('mobile-menu');
             var openIcon = this.querySelector('.icon-open');
@@ -1035,7 +1005,57 @@
             closeIcon.classList.toggle('hidden');
         });
 
-        // Calculator widget
+        // ===== PHONE SCREEN ROTATION =====
+        (function() {
+            const screens = document.querySelectorAll('.screen-slide');
+            const dots = document.querySelectorAll('.phone-dot');
+            let currentIndex = 0;
+            const total = screens.length;
+            let interval;
+
+            function goTo(index) {
+                if (index === currentIndex) return;
+                // Remove active from all
+                screens.forEach((s, i) => {
+                    s.classList.remove('active');
+                    s.classList.add('exit');
+                });
+                dots.forEach(d => d.classList.remove('active'));
+
+                // Show target
+                setTimeout(() => {
+                    screens.forEach(s => s.classList.remove('exit'));
+                    screens[index].classList.add('active');
+                    dots[index].classList.add('active');
+                    currentIndex = index;
+                }, 50);
+            }
+
+            function nextScreen() {
+                const next = (currentIndex + 1) % total;
+                goTo(next);
+            }
+
+            // Dot click handlers
+            dots.forEach((dot, idx) => {
+                dot.addEventListener('click', function() {
+                    clearInterval(interval);
+                    goTo(idx);
+                    interval = setInterval(nextScreen, 5000);
+                });
+            });
+
+            // Start rotation
+            screens.forEach((s, i) => {
+                if (i === 0) s.classList.add('active');
+                else s.classList.add('exit');
+            });
+            dots[0].classList.add('active');
+
+            interval = setInterval(nextScreen, 5000);
+        })();
+
+        // ===== CALCULATOR =====
         document.addEventListener('DOMContentLoaded', function() {
             var slider = document.getElementById('calc-amount');
             var amountDisplay = document.getElementById('calc-amount-display');
