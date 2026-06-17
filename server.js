@@ -1,7 +1,8 @@
 require('dotenv').config();
 const express = require('express');
 const session = require('express-session');
-const SQLiteStore = require('connect-sqlite3')(session);
+const pgSession = require('connect-pg-simple')(session);
+const { Pool } = require('pg');
 const path = require('path');
 const bcrypt = require('bcrypt');
 const crypto = require('crypto');
@@ -18,12 +19,47 @@ const userRoutes = require('./routes/user');
 const adminRoutes = require('./routes/admin');
 const apiRoutes = require('./routes/api');
 
+// =============================================
+// 1. PostgreSQL connection pool for sessions
+// =============================================
+const pool = new Pool({
+  connectionString: process.env.DATABASE_URL,
+  ssl: { rejectUnauthorized: false } // required for Supabase
+});
+
+// =============================================
+// 2. Create session table (if not exists)
+// =============================================
+(async () => {
+  const client = await pool.connect();
+  try {
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS "session" (
+        "sid" varchar NOT NULL COLLATE "default",
+        "sess" json NOT NULL,
+        "expire" timestamp(6) NOT NULL,
+        CONSTRAINT "session_pkey" PRIMARY KEY ("sid")
+      );
+      CREATE INDEX IF NOT EXISTS "IDX_session_expire" ON "session" ("expire");
+    `);
+    console.log('✅ Session table is ready');
+  } catch (err) {
+    console.error('❌ Failed to create session table:', err.message);
+  } finally {
+    client.release();
+  }
+})();
+
+// =============================================
+// 3. App configuration
+// =============================================
 app.set('trust proxy', 1);
 app.use(helmet({ contentSecurityPolicy: false }));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(express.static(path.join(__dirname, 'public')));
 
+// Ensure upload directories exist
 const fs = require('fs');
 const uploadDirs = ['public/uploads', 'public/uploads/deposits', 'public/uploads/kyc'];
 uploadDirs.forEach(dir => {
@@ -31,7 +67,15 @@ uploadDirs.forEach(dir => {
   if (!fs.existsSync(fullPath)) fs.mkdirSync(fullPath, { recursive: true });
 });
 
-const sessionStore = new SQLiteStore({ db: 'sessions.db', concurrentDB: true });
+// =============================================
+// 4. Session store (PostgreSQL)
+// =============================================
+const sessionStore = new pgSession({
+  pool: pool,
+  tableName: 'session', // table name – must match the one we created
+  createTableIfMissing: false // we already created it above
+});
+
 app.use(session({
   store: sessionStore,
   secret: process.env.SESSION_SECRET || crypto.randomBytes(32).toString('hex'),
@@ -41,12 +85,15 @@ app.use(session({
     httpOnly: true,
     secure: process.env.NODE_ENV === 'production',
     sameSite: 'lax',
-    maxAge: 30 * 24 * 60 * 60 * 1000
+    maxAge: 30 * 24 * 60 * 60 * 1000 // 30 days
   }
 }));
 
 app.use(flash());
 
+// =============================================
+// 5. Global user middleware (using PostgreSQL)
+// =============================================
 app.use(async (req, res, next) => {
   res.locals.isLoggedIn = false;
   res.locals.user = null;
@@ -71,6 +118,9 @@ app.use(async (req, res, next) => {
   next();
 });
 
+// =============================================
+// 6. View engine & routes
+// =============================================
 app.set('view engine', 'ejs');
 app.set('views', path.join(__dirname, 'views'));
 
@@ -80,6 +130,9 @@ app.use('/api', apiRoutes);
 app.use('/dashboard', userRoutes);
 app.use('/admin', adminRoutes);
 
+// =============================================
+// 7. Error handling
+// =============================================
 app.use((err, req, res, next) => {
   console.error('Server error:', err);
   res.status(500).render('error', {
@@ -92,6 +145,9 @@ app.use((req, res) => {
   res.status(404).render('error', { message: 'Page not found', error: { status: 404 } });
 });
 
+// =============================================
+// 8. Start server
+// =============================================
 app.listen(PORT, () => {
   console.log(`
 ╔══════════════════════════════════════════════════════════╗
@@ -105,6 +161,9 @@ app.listen(PORT, () => {
   `);
 });
 
+// =============================================
+// 9. Currency helper
+// =============================================
 app.locals.formatCurrency = function(amount, currency) {
   if (!currency) currency = 'GBP';
   if (!amount) amount = 0;
@@ -114,9 +173,11 @@ app.locals.formatCurrency = function(amount, currency) {
   }).format(amount);
 };
 
+// =============================================
+// 10. Keep-alive cron (production only)
+// =============================================
 const cron = require('node-cron');
 
-// Keep alive: ping every 5 minutes
 if (process.env.NODE_ENV === 'production') {
   cron.schedule('*/5 * * * *', () => {
     const url = process.env.BASE_URL || 'https://your-app.onrender.com';
@@ -126,5 +187,16 @@ if (process.env.NODE_ENV === 'production') {
   });
 }
 
-process.on('SIGINT', () => { console.log('🛑 Shutting down...'); process.exit(0); });
-process.on('SIGTERM', () => { console.log('🛑 Shutting down...'); process.exit(0); });
+// =============================================
+// 11. Graceful shutdown
+// =============================================
+process.on('SIGINT', async () => {
+  console.log('🛑 Shutting down...');
+  await pool.end();
+  process.exit(0);
+});
+process.on('SIGTERM', async () => {
+  console.log('🛑 Shutting down...');
+  await pool.end();
+  process.exit(0);
+});
