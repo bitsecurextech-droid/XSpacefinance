@@ -1,5 +1,6 @@
 console.log('🔍 DATABASE_URL (first 30 chars):', process.env.DATABASE_URL?.slice(0, 30));
 console.log('🔍 DATABASE_URL length:', process.env.DATABASE_URL?.length);require('dotenv').config();
+console.log('🔍 DATABASE_URL:', process.env.DATABASE_URL?.replace(/:[^:@]*@/, ':***@'));
 const express = require('express');
 const session = require('express-session');
 const pgSession = require('connect-pg-simple')(session);
