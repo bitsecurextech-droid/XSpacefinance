@@ -200,3 +200,6 @@ process.on('SIGTERM', async () => {
   await pool.end();
   process.exit(0);
 });
+
+console.log('DATABASE_URL exists?', !!process.env.DATABASE_URL);
+console.log('DATABASE_URL starts with:', process.env.DATABASE_URL?.slice(0, 20));
