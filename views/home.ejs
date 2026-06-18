@@ -1,1058 +1,305 @@
-<!DOCTYPE html>
-<html lang="en" class="scroll-smooth">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <meta name="csrf-token" content="paCShjy6ClZEkOrjLhKe7TeENiCBiH6dhfLGJ0Di">
-    <meta name="description" content="XSpaceFinance offers structured investment plans with fixed durations, published compound interest rates, and transparent returns. Serving investors in the US, UK, and Canada.">
-    <link rel="canonical" href="https://xspacefinance.com">
-    <title>XSpaceFinance — Structured growth. Transparent returns.</title>
+const express = require('express');
+const router = express.Router();
+const db = require('../config/database');
+const bcrypt = require('bcrypt');
+const crypto = require('crypto');
+const { sendVerificationEmail, sendResetPasswordEmail } = require('../config/email');
 
-    <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
-    <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
-    <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
-    <link rel="manifest" href="/site.webmanifest">
+// ==================== HELPERS ====================
+// Ensure reset token columns exist (run once)
+async function ensureResetColumns() {
+  try {
+    await db.run("ALTER TABLE users ADD COLUMN reset_token TEXT");
+    await db.run("ALTER TABLE users ADD COLUMN reset_token_expiry TEXT");
+    console.log('✅ Reset token columns ready');
+  } catch (e) {
+    if (!e.message.includes('duplicate column name')) console.warn('⚠️ Could not add reset columns:', e.message);
+  }
+}
+// ✅ Fix: Wrap in an IIFE to avoid top-level await error
+(async () => {
+  await ensureResetColumns();
+})();
 
-    <meta property="og:type" content="website">
-    <meta property="og:title" content="XSpaceFinance — Structured growth. Transparent returns.">
-    <meta property="og:description" content="Fixed-duration investment plans with clearly stated compound returns. Designed for individual investors who value clarity over complexity.">
-    <meta property="og:image" content="/og-image.png">
-    <meta property="og:url" content="https://xspacefinance.com">
-    <meta property="og:site_name" content="XSpaceFinance">
+// ==================== REGISTER ====================
+router.get('/register', (req, res) => {
+  res.render('auth/register', { title: 'Register', error: req.flash('error'), success: req.flash('success') });
+});
 
-    <meta name="twitter:card" content="summary_large_image">
-    <meta name="twitter:title" content="XSpaceFinance — Structured growth. Transparent returns.">
-    <meta name="twitter:description" content="Fixed-duration investment plans with clearly stated compound returns. Designed for individual investors who value clarity over complexity.">
-    <meta name="twitter:image" content="/og-image.png">
+router.post('/register', async (req, res) => {
+  try {
+    const { first_name, last_name, email, password, confirm, country, referral } = req.body;
 
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-    <script src="https://cdn.tailwindcss.com">
-    </script>
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-        body {
-            font-family: 'Inter', sans-serif;
-            background: #0f172a;
-            color: #f8fafc;
-        }
-        .font-display {
-            font-family: 'Inter', sans-serif;
-        }
+    if (!first_name || !last_name || !email || !password) {
+      req.flash('error', 'All fields are required');
+      return res.redirect('/register');
+    }
+    if (password !== confirm) {
+      req.flash('error', 'Passwords do not match');
+      return res.redirect('/register');
+    }
+    if (password.length < 8) {
+      req.flash('error', 'Password must be at least 8 characters');
+      return res.redirect('/register');
+    }
 
-        @keyframes fadeIn {
-            from {
-                opacity: 0;
-                transform: translateY(8px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
-        @keyframes fadeOut {
-            from {
-                opacity: 1;
-                transform: translateY(0);
-            }
-            to {
-                opacity: 0;
-                transform: translateY(-8px);
-            }
-        }
-        @keyframes slideUp {
-            from {
-                opacity: 0;
-                transform: translateY(30px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
-        @keyframes pulse {
-            0%,
-            100% {
-                opacity: 1;
-            }
-            50% {
-                opacity: 0.5;
-            }
-        }
-        @keyframes float {
-            0%,
-            100% {
-                transform: translateY(0px);
-            }
-            50% {
-                transform: translateY(-8px);
-            }
-        }
-        @keyframes shimmer {
-            0% {
-                background-position: -200% 0;
-            }
-            100% {
-                background-position: 200% 0;
-            }
-        }
-        @keyframes numberChange {
-            0% {
-                opacity: 0.5;
-                transform: scale(0.98);
-            }
-            100% {
-                opacity: 1;
-                transform: scale(1);
-            }
-        }
-        @keyframes slideInLeft {
-            from {
-                opacity: 0;
-                transform: translateX(-20px);
-            }
-            to {
-                opacity: 1;
-                transform: translateX(0);
-            }
-        }
-        .animate-fade-in {
-            animation: fadeIn 0.6s ease-out forwards;
-        }
-        .animate-slide-up {
-            animation: slideUp 0.6s ease-out forwards;
-        }
-        .animate-pulse-slow {
-            animation: pulse 2s ease-in-out infinite;
-        }
-        .animate-float {
-            animation: float 4s ease-in-out infinite;
-        }
-        .animate-slide-in-left {
-            animation: slideInLeft 0.4s ease-out forwards;
-        }
-        .shimmer {
-            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.08), transparent);
-            background-size: 200% 100%;
-            animation: shimmer 2s infinite;
-        }
-        .number-update {
-            animation: numberChange 0.3s ease-out;
-        }
+    const existing = await db.get('SELECT id FROM users WHERE email = ?', [email]);
+    if (existing) {
+      req.flash('error', 'Email already registered');
+      return res.redirect('/register');
+    }
 
-        .phone-screen {
-            background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
-        }
-        .screen-slide {
-            transition: opacity 0.6s ease-in-out, transform 0.6s ease-in-out;
-            position: absolute;
-            inset: 0;
-            opacity: 0;
-            transform: scale(0.97);
-            pointer-events: none;
-            display: flex;
-            flex-direction: column;
-        }
-        .screen-slide.active {
-            opacity: 1;
-            transform: scale(1);
-            pointer-events: auto;
-        }
-        .screen-slide.exit {
-            opacity: 0;
-            transform: scale(0.97);
-        }
-        .progress-bar-fill {
-            transition: width 0.5s ease;
-        }
-        .no-scrollbar::-webkit-scrollbar {
-            display: none;
-        }
-        .no-scrollbar {
-            -ms-overflow-style: none;
-            scrollbar-width: none;
-        }
-        .landing-plan-grid {
-            display: grid;
-            gap: 1.25rem;
-        }
-        @media (min-width: 640px) {
-            .landing-plan-grid {
-                grid-template-columns: repeat(2, 1fr);
-            }
-        }
-        @media (min-width: 1024px) {
-            .landing-plan-grid {
-                grid-template-columns: repeat(2, 1fr);
-            }
-        }
-        .parallax-layer {
-            will-change: transform;
-        }
-        .device-frame {
-            position: relative;
-        }
-        .device-iphone-frame {
-            max-width: 300px;
-            margin: 0 auto;
-        }
-        .device-android-frame {
-            max-width: 280px;
-            margin: 0 auto;
-        }
+    // ✅ Set currency based on country
+    let currency = 'GBP'; // default
+    if (country === 'US') currency = 'USD';
+    else if (country === 'CA') currency = 'CAD';
 
-        .tx-icon {
-            width: 2rem;
-            height: 2rem;
-            border-radius: 9999px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            flex-shrink: 0;
-        }
-        .status-badge {
-            font-size: 0.6rem;
-            padding: 0.15rem 0.5rem;
-            border-radius: 9999px;
-            font-weight: 600;
-            text-transform: uppercase;
-            letter-spacing: 0.05em;
-        }
-        .status-badge.completed {
-            background: rgba(16, 185, 129, 0.15);
-            color: #34d399;
-        }
-        .status-badge.pending {
-            background: rgba(251, 191, 36, 0.15);
-            color: #fbbf24;
-        }
-        .status-badge.failed {
-            background: rgba(239, 68, 68, 0.15);
-            color: #f87171;
-        }
-        .status-badge.active {
-            background: rgba(59, 130, 246, 0.15);
-            color: #60a5fa;
-        }
-        .transaction-item {
-            transition: background 0.15s ease;
-        }
-        .transaction-item:hover {
-            background: rgba(255, 255, 255, 0.03);
-        }
+    const hashedPassword = await bcrypt.hash(password, 10);
+    const referralCode = crypto.randomBytes(4).toString('hex').toUpperCase();
+    const verifyToken = crypto.randomBytes(32).toString('hex');
 
-        .plan-card-phone {
-            transition: all 0.2s ease;
-        }
-        .plan-card-phone:hover {
-            transform: scale(1.01);
-        }
-        .plans-scroll-vertical {
-            max-height: 280px;
-            overflow-y: auto;
-        }
-        .plans-scroll-vertical::-webkit-scrollbar {
-            width: 2px;
-        }
-        .plans-scroll-vertical::-webkit-scrollbar-track {
-            background: transparent;
-        }
-        .plans-scroll-vertical::-webkit-scrollbar-thumb {
-            background: #334155;
-            border-radius: 9999px;
-        }
+    await db.run(
+      `INSERT INTO users (first_name, last_name, email, password, country, currency, referral_code, email_verified, email_verify_token, created_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?, 0, ?, CURRENT_TIMESTAMP)`,
+      [first_name, last_name, email, hashedPassword, country || 'UK', currency, referralCode, verifyToken]
+    );
 
-        /* Page indicator dots */
-        .phone-dots {
-            display: flex;
-            gap: 0.35rem;
-            justify-content: center;
-            padding: 0.25rem 0 0.15rem;
-        }
-        .phone-dot {
-            width: 0.4rem;
-            height: 0.4rem;
-            border-radius: 9999px;
-            background: #334155;
-            transition: background 0.3s, transform 0.3s;
-            cursor: pointer;
-        }
-        .phone-dot.active {
-            background: #3b82f6;
-            transform: scale(1.2);
-        }
-        .phone-dot:hover {
-            background: #60a5fa;
-        }
-    </style>
-</head>
-<body class="bg-white text-slate-900 antialiased">
+    try {
+      await sendVerificationEmail(email, verifyToken);
+    } catch (emailErr) {
+      console.error('Email send error (non-critical):', emailErr.message);
+    }
 
-    <nav class="bg-white/95 backdrop-blur-sm border-b border-slate-200/80 sticky top-0 z-50">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="flex items-center justify-between h-16 lg:h-[4.25rem]">
-                <a href="/" class="text-xl font-extrabold tracking-tight bg-gradient-to-r from-slate-800 via-blue-700 to-slate-800 bg-clip-text text-transparent">
-                    XSpaceFinance
-                </a>
-                <div class="hidden md:flex items-center gap-1">
-                    <a href="/" class="px-4 py-2 text-sm font-medium text-slate-500 hover:text-slate-900 rounded-lg hover:bg-slate-50 transition-colors">Home</a>
-                    <a href="/about" class="px-4 py-2 text-sm font-medium text-slate-500 hover:text-slate-900 rounded-lg hover:bg-slate-50 transition-colors">About</a>
-                    <a href="/plans" class="px-4 py-2 text-sm font-medium text-slate-500 hover:text-slate-900 rounded-lg hover:bg-slate-50 transition-colors">Plans</a>
-                    <a href="/calculator" class="px-4 py-2 text-sm font-medium text-slate-500 hover:text-slate-900 rounded-lg hover:bg-slate-50 transition-colors">Calculator</a>
-                </div>
-                <div class="hidden md:flex items-center gap-3">
-                    <a href="/signin" class="text-sm font-medium text-slate-600 hover:text-slate-900 transition-colors">Sign In</a>
-                    <a href="/register" class="bg-slate-900 text-white px-5 py-2.5 rounded-lg text-sm font-medium hover:bg-slate-800 transition-colors">Get Started</a>
-                </div>
-                <button id="mobile-menu-btn" type="button" class="md:hidden p-2 -mr-2 rounded-lg text-slate-500 hover:bg-slate-100 transition-colors" aria-label="Toggle navigation menu">
-                    <svg class="w-6 h-6 icon-open" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5" />
-                    </svg>
-                    <svg class="w-6 h-6 icon-close hidden" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12" />
-                    </svg>
-                </button>
-            </div>
-        </div>
-        <div id="mobile-menu" class="hidden md:hidden border-t border-slate-200/80">
-            <div class="px-4 py-4 space-y-1">
-                <a href="/" class="block px-4 py-3 text-sm font-medium text-slate-700 hover:bg-slate-50 rounded-lg transition-colors">Home</a>
-                <a href="/about" class="block px-4 py-3 text-sm font-medium text-slate-700 hover:bg-slate-50 rounded-lg transition-colors">About</a>
-                <a href="/plans" class="block px-4 py-3 text-sm font-medium text-slate-700 hover:bg-slate-50 rounded-lg transition-colors">Plans</a>
-                <a href="/calculator" class="block px-4 py-3 text-sm font-medium text-slate-700 hover:bg-slate-50 rounded-lg transition-colors">Calculator</a>
-            </div>
-            <div class="px-4 py-4 border-t border-slate-100 space-y-2">
-                <a href="/signin" class="block px-4 py-3 text-sm font-medium text-slate-700 hover:bg-slate-50 rounded-lg transition-colors">Sign In</a>
-                <a href="/register" class="block w-full text-center bg-slate-900 text-white px-4 py-3 rounded-lg text-sm font-medium hover:bg-slate-800 transition-colors">Get Started</a>
-            </div>
-        </div>
-    </nav>
+    req.flash('success', 'Account created! Please check your email to verify your account.');
+    res.redirect('/signin');
+  } catch (error) {
+    console.error('Signup error:', error);
+    req.flash('error', 'Failed to create account');
+    res.redirect('/register');
+  }
+});
 
-    <!-- ===== HERO SECTION – ANIMATED PHONE ===== -->
-    <section class="relative pt-12 pb-20 lg:pt-20 lg:pb-28 overflow-hidden bg-gradient-to-b from-slate-950 via-slate-900 to-slate-950">
-        <div class="absolute inset-0 overflow-hidden pointer-events-none" aria-hidden="true">
-            <div class="absolute -top-60 right-1/4 w-[500px] h-[500px] rounded-full bg-blue-600/[0.04] blur-[120px]"></div>
-        </div>
-        <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-            <div class="grid lg:grid-cols-2 gap-12 lg:gap-16 items-center">
-                <!-- Left Text -->
-                <div class="animate-slide-up">
-                    <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-500/10 border border-blue-500/20 mb-6">
-                        <span class="flex h-2 w-2 rounded-full bg-blue-500 animate-pulse"></span>
-                        <span class="text-[11px] font-mono font-medium text-blue-500 uppercase tracking-wider">Live in US, UK & Canada</span>
-                    </div>
-                    <h1 class="font-display text-4xl sm:text-5xl lg:text-6xl xl:text-7xl font-extrabold tracking-tight leading-[1.05] mb-6 text-white">Structured growth.<br/>Transparent returns.</h1>
-                    <p class="text-base sm:text-lg text-slate-400 max-w-[50ch] mb-10 leading-relaxed">Fixed-duration investment plans with clearly stated compound returns. Designed for individual investors who value clarity over complexity.</p>
-                    <div class="flex flex-wrap gap-3">
-                        <a href="/register" class="px-7 py-3.5 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 transition shadow-lg shadow-blue-600/20 inline-flex items-center gap-2">Start Investing
-                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
-                        </a>
-                        <a href="/plans" class="px-7 py-3.5 bg-slate-800 border border-slate-700 text-white font-semibold rounded-lg hover:bg-slate-700 transition">View Investment Plans</a>
-                    </div>
-                    <div class="mt-10 flex flex-wrap items-center gap-x-8 gap-y-3 text-xs font-mono text-slate-500">
-                        <span class="inline-flex items-center gap-1"><svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="text-green-500"><path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"/><path d="m9 12 2 2 4-4"/></svg> 256-bit encryption</span>
-                        <span class="inline-flex items-center gap-1"><svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="text-green-500"><path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"/><path d="m9 12 2 2 4-4"/></svg> Serving US, UK & Canada</span>
-                        <span class="inline-flex items-center gap-1"><svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="text-green-500"><path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"/><path d="m9 12 2 2 4-4"/></svg> Transparent ROI formula</span>
-                    </div>
-                </div>
+// ==================== SIGN IN ====================
+router.get('/signin', (req, res) => {
+  res.render('auth/signin', { title: 'Sign In', error: req.flash('error'), success: req.flash('success') });
+});
 
-                <!-- ANIMATED PHONE -->
-                <div class="relative animate-float">
-                    <div class="relative mx-auto w-[280px] sm:w-[300px] h-[560px] sm:h-[620px] rounded-[3rem] border-[10px] border-slate-800 bg-slate-900 shadow-2xl overflow-hidden">
-                        <div class="absolute top-2 left-1/2 -translate-x-1/2 w-32 h-6 bg-slate-900 rounded-b-2xl z-20"></div>
+// POST /signin
+router.post('/signin', async (req, res) => {
+  try {
+    const { email, password } = req.body;
+    const user = await db.get('SELECT * FROM users WHERE email = ?', [email]);
+    if (!user) {
+      req.flash('error', 'Invalid credentials');
+      return res.redirect('/signin');
+    }
+    const valid = await bcrypt.compare(password, user.password);
+    if (!valid) {
+      req.flash('error', 'Invalid credentials');
+      return res.redirect('/signin');
+    }
 
-                        <div class="absolute inset-0 phone-screen overflow-hidden">
+    // Optional: enforce email verification
+    // if (user.email_verified === 0) {
+    //   req.flash('error', 'Please verify your email before signing in.');
+    //   return res.redirect('/signin');
+    // }
 
-                            <!-- ===== SCREEN 1: Investment Plans ===== -->
-                            <div class="screen-slide active" data-screen="0">
-                                <!-- Status Bar -->
-                                <div class="px-5 pt-10 pb-2 flex items-center justify-between shrink-0 bg-transparent">
-                                    <span class="text-[10px] font-mono text-white">9:41</span>
-                                    <div class="flex items-center gap-1">
-                                        <svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="text-white"><circle cx="12" cy="12" r="10"/><path d="M12 8v4l3 3"/></svg>
-                                        <span class="text-[10px] font-mono text-white">100%</span>
-                                    </div>
-                                </div>
-                                <!-- Header -->
-                                <div class="px-5 pt-2 pb-1 shrink-0">
-                                    <span class="text-[13px] font-bold text-white">Investment Plans</span>
-                                    <p class="text-[9px] text-slate-500 mt-0.5">Choose a plan that fits your goals</p>
-                                </div>
-                                <!-- Scrollable Plans -->
-                                <div class="flex-1 overflow-y-auto px-4 pb-3 plans-scroll-vertical">
-                                    <div class="space-y-2.5">
-                                        <div class="plan-card-phone bg-slate-900/60 rounded-lg border border-slate-800/40 p-3">
-                                            <div class="flex justify-between items-start"><div><p class="text-[11px] font-bold text-white">108 Circle</p><p class="text-[8px] text-slate-400">1 month</p></div><span class="text-[10px] font-bold text-blue-400">200%</span></div>
-                                            <div class="flex justify-between mt-1"><span class="text-[8px] text-slate-500">$100 – $2,221</span></div>
-                                        </div>
-                                        <div class="plan-card-phone bg-slate-900/60 rounded-lg border border-slate-800/40 p-3">
-                                            <div class="flex justify-between items-start"><div><p class="text-[11px] font-bold text-white">2222 Investment</p><p class="text-[8px] text-slate-400">1 month</p></div><span class="text-[10px] font-bold text-blue-400">200%</span></div>
-                                            <div class="flex justify-between mt-1"><span class="text-[8px] text-slate-500">$2,222 – $7,999</span></div>
-                                        </div>
-                                        <div class="plan-card-phone bg-blue-500/10 rounded-lg border border-blue-500/25 p-3 relative">
-                                            <div class="absolute -top-1.5 right-2.5"><span class="bg-blue-500 text-[6px] text-white font-bold px-1.5 py-0.5 rounded-full uppercase">Popular</span></div>
-                                            <div class="flex justify-between items-start"><div><p class="text-[11px] font-bold text-white">8888 Investment</p><p class="text-[8px] text-slate-400">1 month</p></div><span class="text-[10px] font-bold text-blue-400">300%</span></div>
-                                            <div class="flex justify-between mt-1"><span class="text-[8px] text-slate-500">$8,000 – $14,999</span></div>
-                                        </div>
-                                        <div class="plan-card-phone bg-blue-500/10 rounded-lg border border-blue-500/25 p-3 relative">
-                                            <div class="absolute -top-1.5 right-2.5"><span class="bg-blue-500 text-[6px] text-white font-bold px-1.5 py-0.5 rounded-full uppercase">Popular</span></div>
-                                            <div class="flex justify-between items-start"><div><p class="text-[11px] font-bold text-white">Tier 3 Investment</p><p class="text-[8px] text-slate-400">1 month</p></div><span class="text-[10px] font-bold text-blue-400">350%</span></div>
-                                            <div class="flex justify-between mt-1"><span class="text-[8px] text-slate-500">$15,000 – $19,999</span></div>
-                                        </div>
-                                        <div class="plan-card-phone bg-blue-500/10 rounded-lg border border-blue-500/25 p-3 relative">
-                                            <div class="absolute -top-1.5 right-2.5"><span class="bg-blue-500 text-[6px] text-white font-bold px-1.5 py-0.5 rounded-full uppercase">Popular</span></div>
-                                            <div class="flex justify-between items-start"><div><p class="text-[11px] font-bold text-white">Bitcoin Elite Group</p><p class="text-[8px] text-slate-400">2 weeks</p></div><span class="text-[10px] font-bold text-blue-400">750%</span></div>
-                                            <div class="flex justify-between mt-1"><span class="text-[8px] text-slate-500">$20,000 – $999,999,999</span></div>
-                                        </div>
-                                        <div class="bg-gradient-to-br from-emerald-500/10 to-emerald-500/5 rounded-lg border border-emerald-500/15 p-3 mt-1">
-                                            <p class="text-[8px] text-emerald-400/80 font-semibold uppercase tracking-wider mb-1">8888 Investment Projection</p>
-                                            <div class="flex justify-between items-baseline"><div><span class="text-[8px] text-slate-500 block">Invest $10,000</span><span class="text-sm font-bold text-white tabular-nums">$40,000</span></div><div class="text-right"><span class="text-[8px] text-slate-500 block">1 mo return</span><span class="text-sm font-bold text-emerald-400 tabular-nums">+300%</span></div></div>
-                                            <div class="mt-1.5"><svg viewBox="0 0 180 28" class="w-full" fill="none"><defs><linearGradient id="pg1" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#10b981" stop-opacity="0.15"/><stop offset="100%" stop-color="#10b981" stop-opacity="0"/></linearGradient></defs><path d="M0,24 C20,22 40,20 60,17 C80,14 100,10 120,7 C140,5 160,3 180,2 L180,28 L0,28Z" fill="url(#pg1)"/><polyline points="0,24 30,20 60,17 90,13 120,9 150,5 180,2" stroke="#10b981" stroke-width="1" fill="none" stroke-linecap="round"/></svg></div>
-                                        </div>
-                                    </div>
-                                </div>
-                                <!-- Bottom Nav -->
-                                <div class="shrink-0 border-t border-slate-800/80 bg-slate-950/95 px-4 py-2 flex items-center justify-between">
-                                    <div class="flex flex-col items-center gap-0.5"><svg class="w-4 h-4 text-slate-500" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="m2.25 12 8.954-8.955c.44-.439 1.152-.439 1.591 0L21.75 12M4.5 9.75v10.125c0 .621.504 1.125 1.125 1.125H9.75v-4.875c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125V21h4.125c.621 0 1.125-.504 1.125-1.125V9.75M8.25 21h8.25"/></svg><span class="text-[7px] text-slate-500 font-medium">Home</span></div>
-                                    <div class="flex flex-col items-center gap-0.5"><svg class="w-4 h-4 text-blue-400" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M3 13.125C3 12.504 3.504 12 4.125 12h2.25c.621 0 1.125.504 1.125 1.125v6.75C7.5 20.496 6.996 21 6.375 21h-2.25A1.125 1.125 0 0 1 3 19.875v-6.75ZM9.75 8.625c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125v11.25c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 0 1-1.125-1.125V8.625ZM16.5 4.125c0-.621.504-1.125 1.125-1.125h2.25C20.496 3 21 3.504 21 4.125v15.75c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 0 1-1.125-1.125V4.125Z"/></svg><span class="text-[7px] text-blue-400 font-medium">Plans</span></div>
-                                    <div class="flex flex-col items-center gap-0.5"><svg class="w-4 h-4 text-slate-500" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M21 12a2.25 2.25 0 0 0-2.25-2.25H15a3 3 0 1 1-6 0H5.25A2.25 2.25 0 0 0 3 12m18 0v6a2.25 2.25 0 0 1-2.25 2.25H5.25A2.25 2.25 0 0 1 3 18v-6m18 0V9M3 12V9m18 0a2.25 2.25 0 0 0-2.25-2.25H5.25A2.25 2.25 0 0 0 3 9m18 0V6a2.25 2.25 0 0 0-2.25-2.25H5.25A2.25 2.25 0 0 0 3 6v3"/></svg><span class="text-[7px] text-slate-500 font-medium">Wallet</span></div>
-                                    <div class="flex flex-col items-center gap-0.5"><svg class="w-4 h-4 text-slate-500" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 6a3.75 3.75 0 1 1-7.5 0 3.75 3.75 0 0 1 7.5 0ZM4.501 20.118a7.5 7.5 0 0 1 14.998 0A17.933 17.933 0 0 1 12 21.75c-2.676 0-5.216-.584-7.499-1.632Z"/></svg><span class="text-[7px] text-slate-500 font-medium">Profile</span></div>
-                                </div>
-                                <div class="flex justify-center pb-2 pt-0.5 shrink-0"><div class="w-24 h-1 bg-white/20 rounded-full"></div></div>
-                            </div>
+    req.session.userId = user.id;
+    await db.run('UPDATE users SET last_login = CURRENT_TIMESTAMP WHERE id = ?', [user.id]);
 
-                            <!-- ===== SCREEN 2: Select Plan ===== -->
-                            <div class="screen-slide" data-screen="1">
-                                <div class="px-5 pt-10 pb-2 flex items-center justify-between shrink-0 bg-transparent">
-                                    <span class="text-[10px] font-mono text-white">9:41</span>
-                                    <div class="flex items-center gap-1">
-                                        <svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="text-white"><circle cx="12" cy="12" r="10"/><path d="M12 8v4l3 3"/></svg>
-                                        <span class="text-[10px] font-mono text-white">100%</span>
-                                    </div>
-                                </div>
-                                <div class="flex items-center justify-between px-5 pt-2 pb-1 shrink-0">
-                                    <span class="font-display text-sm font-extrabold text-white">XSpaceFinance</span>
-                                    <div class="size-7 rounded-full bg-slate-800 grid place-items-center border border-slate-700">
-                                        <span class="text-[9px] font-bold text-slate-400">JD</span>
-                                    </div>
-                                </div>
-                                <div class="flex-1 overflow-y-auto px-4 pb-3">
-                                    <p class="text-[11px] font-bold text-white mb-3">Select Plan</p>
-                                    <div class="space-y-2.5">
-                                        <div class="plan-card-phone p-3 rounded-xl border-2 border-blue-500 bg-blue-500/10">
-                                            <div class="flex justify-between items-start"><div><p class="font-bold text-white text-sm">108 Circle</p><p class="text-[10px] text-slate-400">1 month · Simple</p></div><span class="text-[9px] font-bold text-blue-400">200%</span></div>
-                                            <div class="flex justify-between mt-1.5"><span class="text-[9px] text-slate-500">$100 – $2,221</span><span class="text-[9px] font-bold text-blue-400">SELECTED</span></div>
-                                        </div>
-                                        <div class="plan-card-phone p-3 rounded-xl border border-slate-700 relative">
-                                            <div class="absolute -top-1.5 right-3"><span class="bg-blue-500 text-[6px] text-white font-bold px-1.5 py-0.5 rounded-full uppercase tracking-wider">Popular</span></div>
-                                            <div class="flex justify-between items-start"><div><p class="font-bold text-white text-sm">8888 Investment</p><p class="text-[10px] text-slate-400">1 month · Simple</p></div><span class="text-[10px] font-bold text-blue-400">300%</span></div>
-                                            <div class="flex justify-between mt-1.5"><span class="text-[9px] text-slate-500">$8,000 – $14,999</span></div>
-                                        </div>
-                                        <div class="plan-card-phone p-3 rounded-xl border border-slate-700 relative">
-                                            <div class="absolute -top-1.5 right-3"><span class="bg-blue-500 text-[6px] text-white font-bold px-1.5 py-0.5 rounded-full uppercase tracking-wider">Popular</span></div>
-                                            <div class="flex justify-between items-start"><div><p class="font-bold text-white text-sm">Bitcoin Elite Group</p><p class="text-[10px] text-slate-400">2 weeks · Simple</p></div><span class="text-[10px] font-bold text-blue-400">750%</span></div>
-                                            <div class="flex justify-between mt-1.5"><span class="text-[9px] text-slate-500">$20,000 – $999,999,999</span></div>
-                                        </div>
-                                    </div>
-                                    <div class="mt-4 pt-3 border-t border-slate-800/60">
-                                        <p class="text-[9px] text-slate-500 mb-1">Investment Amount</p>
-                                        <p class="text-2xl font-bold text-white">$5,000</p>
-                                        <button class="w-full mt-3 py-2.5 bg-blue-600 rounded-lg text-sm font-semibold text-white hover:bg-blue-700 transition">Activate Investment</button>
-                                    </div>
-                                </div>
-                                <div class="shrink-0 border-t border-slate-800/80 bg-slate-950/95 px-4 py-2 flex items-center justify-between">
-                                    <div class="flex flex-col items-center gap-0.5"><svg class="w-4 h-4 text-slate-500" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="m2.25 12 8.954-8.955c.44-.439 1.152-.439 1.591 0L21.75 12M4.5 9.75v10.125c0 .621.504 1.125 1.125 1.125H9.75v-4.875c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125V21h4.125c.621 0 1.125-.504 1.125-1.125V9.75M8.25 21h8.25"/></svg><span class="text-[7px] text-slate-500 font-medium">Home</span></div>
-                                    <div class="flex flex-col items-center gap-0.5"><svg class="w-4 h-4 text-blue-400" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M3 13.125C3 12.504 3.504 12 4.125 12h2.25c.621 0 1.125.504 1.125 1.125v6.75C7.5 20.496 6.996 21 6.375 21h-2.25A1.125 1.125 0 0 1 3 19.875v-6.75ZM9.75 8.625c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125v11.25c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 0 1-1.125-1.125V8.625ZM16.5 4.125c0-.621.504-1.125 1.125-1.125h2.25C20.496 3 21 3.504 21 4.125v15.75c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 0 1-1.125-1.125V4.125Z"/></svg><span class="text-[7px] text-blue-400 font-medium">Plans</span></div>
-                                    <div class="flex flex-col items-center gap-0.5"><svg class="w-4 h-4 text-slate-500" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M21 12a2.25 2.25 0 0 0-2.25-2.25H15a3 3 0 1 1-6 0H5.25A2.25 2.25 0 0 0 3 12m18 0v6a2.25 2.25 0 0 1-2.25 2.25H5.25A2.25 2.25 0 0 1 3 18v-6m18 0V9M3 12V9m18 0a2.25 2.25 0 0 0-2.25-2.25H5.25A2.25 2.25 0 0 0 3 9m18 0V6a2.25 2.25 0 0 0-2.25-2.25H5.25A2.25 2.25 0 0 0 3 6v3"/></svg><span class="text-[7px] text-slate-500 font-medium">Wallet</span></div>
-                                    <div class="flex flex-col items-center gap-0.5"><svg class="w-4 h-4 text-slate-500" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 6a3.75 3.75 0 1 1-7.5 0 3.75 3.75 0 0 1 7.5 0ZM4.501 20.118a7.5 7.5 0 0 1 14.998 0A17.933 17.933 0 0 1 12 21.75c-2.676 0-5.216-.584-7.499-1.632Z"/></svg><span class="text-[7px] text-slate-500 font-medium">Profile</span></div>
-                                </div>
-                                <div class="flex justify-center pb-2 pt-0.5 shrink-0"><div class="w-24 h-1 bg-white/20 rounded-full"></div></div>
-                            </div>
+    try {
+      await db.run(
+        `INSERT INTO activity_log (user_id, action, type, description, created_at)
+         VALUES (?, ?, ?, ?, CURRENT_TIMESTAMP)`,
+        [user.id, 'login', 'auth', 'User logged in']
+      );
+    } catch (logError) { /* ignore */ }
 
-                            <!-- ===== SCREEN 3: Withdrawal / Matured ===== -->
-                            <div class="screen-slide" data-screen="2">
-                                <div class="px-5 pt-10 pb-2 flex items-center justify-between shrink-0 bg-transparent">
-                                    <span class="text-[10px] font-mono text-white">9:41</span>
-                                    <div class="flex items-center gap-1">
-                                        <svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="text-white"><circle cx="12" cy="12" r="10"/><path d="M12 8v4l3 3"/></svg>
-                                        <span class="text-[10px] font-mono text-white">100%</span>
-                                    </div>
-                                </div>
-                                <div class="flex items-center justify-between px-5 pt-2 pb-1 shrink-0">
-                                    <span class="font-display text-sm font-extrabold text-white">XSpaceFinance</span>
-                                    <div class="size-7 rounded-full bg-slate-800 grid place-items-center border border-slate-700">
-                                        <span class="text-[9px] font-bold text-slate-400">JD</span>
-                                    </div>
-                                </div>
-                                <div class="flex-1 overflow-y-auto px-4 pb-3">
-                                    <div class="flex items-center justify-between mb-2">
-                                        <span class="font-display text-sm font-extrabold text-white">Withdrawal</span>
-                                    </div>
-                                    <span class="inline-block px-2 py-0.5 bg-green-500/20 text-green-400 text-[10px] rounded mb-3">Matured</span>
-                                    <p class="text-xs text-slate-500">Investment Matured</p>
-                                    <p class="text-3xl font-bold text-white mt-1">$14,280.00</p>
-                                    <p class="text-sm text-green-500 mt-1">+$4,280 profit (+42.8%)</p>
-                                    <div class="grid grid-cols-2 gap-3 mt-4 p-3 bg-slate-800/50 rounded-xl">
-                                        <div><p class="text-[10px] text-slate-500">Principal</p><p class="font-bold text-white">$10,000.00</p></div>
-                                        <div><p class="text-[10px] text-slate-500">Compound Returns</p><p class="font-bold text-green-500">+$4,280.00</p></div>
-                                    </div>
-                                    <div class="mt-3 p-3 bg-slate-800/50 rounded-xl">
-                                        <p class="text-[10px] text-slate-500">Total Withdrawn</p>
-                                        <p class="text-2xl font-bold text-white">$14,280.00</p>
-                                    </div>
-                                    <div class="mt-3 p-3 rounded-xl border border-slate-700">
-                                        <p class="text-xs text-slate-500 mb-1">Withdraw to</p>
-                                        <div class="flex items-center gap-2">
-                                            <div class="w-6 h-6 rounded-full flex items-center justify-center">
-                                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="14" height="14"><path fill="#F7931A" d="M16,2A14,14,0,1,0,30,16,14,14,0,0,0,16,2Z"/><path fill="#FFF" d="M21.93,13.63a3.56,3.56,0,0,0-2.47-2.06,3.56,3.56,0,0,0-2.47-2.06l-.22-1.1-1.07.28.21,1.08a3.56,3.56,0,0,0-2.47-2.06l-.22-1.1-1.07.28.21,1.08-2.38.61.44,2.27,1.92-.49-.44-2.27,2.38-.61.22,1.1a3.56,3.56,0,0,0,2.47,2.06,3.56,3.56,0,0,0,2.47,2.06l.22,1.1,1.07-.28-.21-1.08a3.56,3.56,0,0,0,2.47-2.06l.22,1.1,1.07-.28Z"/></svg>
-                                            </div>
-                                            <span class="text-sm text-white">Bitcoin Wallet</span>
-                                        </div>
-                                        <button class="w-full mt-3 py-2 bg-blue-600 rounded-lg text-sm font-semibold text-white hover:bg-blue-700 transition">Withdraw $14,280.00</button>
-                                    </div>
-                                </div>
-                                <div class="shrink-0 border-t border-slate-800/80 bg-slate-950/95 px-4 py-2 flex items-center justify-between">
-                                    <div class="flex flex-col items-center gap-0.5"><svg class="w-4 h-4 text-slate-500" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="m2.25 12 8.954-8.955c.44-.439 1.152-.439 1.591 0L21.75 12M4.5 9.75v10.125c0 .621.504 1.125 1.125 1.125H9.75v-4.875c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125V21h4.125c.621 0 1.125-.504 1.125-1.125V9.75M8.25 21h8.25"/></svg><span class="text-[7px] text-slate-500 font-medium">Home</span></div>
-                                    <div class="flex flex-col items-center gap-0.5"><svg class="w-4 h-4 text-blue-400" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M3 13.125C3 12.504 3.504 12 4.125 12h2.25c.621 0 1.125.504 1.125 1.125v6.75C7.5 20.496 6.996 21 6.375 21h-2.25A1.125 1.125 0 0 1 3 19.875v-6.75ZM9.75 8.625c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125v11.25c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 0 1-1.125-1.125V8.625ZM16.5 4.125c0-.621.504-1.125 1.125-1.125h2.25C20.496 3 21 3.504 21 4.125v15.75c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 0 1-1.125-1.125V4.125Z"/></svg><span class="text-[7px] text-blue-400 font-medium">Plans</span></div>
-                                    <div class="flex flex-col items-center gap-0.5"><svg class="w-4 h-4 text-slate-500" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M21 12a2.25 2.25 0 0 0-2.25-2.25H15a3 3 0 1 1-6 0H5.25A2.25 2.25 0 0 0 3 12m18 0v6a2.25 2.25 0 0 1-2.25 2.25H5.25A2.25 2.25 0 0 1 3 18v-6m18 0V9M3 12V9m18 0a2.25 2.25 0 0 0-2.25-2.25H5.25A2.25 2.25 0 0 0 3 9m18 0V6a2.25 2.25 0 0 0-2.25-2.25H5.25A2.25 2.25 0 0 0 3 6v3"/></svg><span class="text-[7px] text-slate-500 font-medium">Wallet</span></div>
-                                    <div class="flex flex-col items-center gap-0.5"><svg class="w-4 h-4 text-slate-500" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 6a3.75 3.75 0 1 1-7.5 0 3.75 3.75 0 0 1 7.5 0ZM4.501 20.118a7.5 7.5 0 0 1 14.998 0A17.933 17.933 0 0 1 12 21.75c-2.676 0-5.216-.584-7.499-1.632Z"/></svg><span class="text-[7px] text-slate-500 font-medium">Profile</span></div>
-                                </div>
-                                <div class="flex justify-center pb-2 pt-0.5 shrink-0"><div class="w-24 h-1 bg-white/20 rounded-full"></div></div>
-                            </div>
+    res.redirect('/dashboard');
+  } catch (error) {
+    console.error('Login error:', error);
+    req.flash('error', 'Login failed');
+    res.redirect('/signin');
+  }
+});
 
-                            <!-- ===== SCREEN 4: Investment Performance ===== -->
-                            <div class="screen-slide" data-screen="3">
-                                <div class="px-5 pt-10 pb-2 flex items-center justify-between shrink-0 bg-transparent">
-                                    <span class="text-[10px] font-mono text-white">9:41</span>
-                                    <div class="flex items-center gap-1">
-                                        <svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="text-white"><circle cx="12" cy="12" r="10"/><path d="M12 8v4l3 3"/></svg>
-                                        <span class="text-[10px] font-mono text-white">100%</span>
-                                    </div>
-                                </div>
-                                <div class="flex items-center justify-between px-5 pt-2 pb-1 shrink-0">
-                                    <span class="font-display text-sm font-extrabold text-white">XSpaceFinance</span>
-                                    <div class="size-7 rounded-full bg-slate-800 grid place-items-center border border-slate-700">
-                                        <span class="text-[9px] font-bold text-slate-400">JD</span>
-                                    </div>
-                                </div>
-                                <div class="flex-1 overflow-y-auto px-4 pb-3">
-                                    <div class="flex items-center justify-between mb-4">
-                                        <span class="font-display text-sm font-extrabold text-white">Investment Performance</span>
-                                    </div>
-                                    <p class="text-lg font-bold text-white">Growth Fund</p>
-                                    <div class="grid grid-cols-2 gap-3 mt-2">
-                                        <div class="p-2 bg-slate-800/50 rounded-lg"><p class="text-[9px] text-slate-500">Invested</p><p class="font-bold text-white">$5,000</p></div>
-                                        <div class="p-2 bg-slate-800/50 rounded-lg"><p class="text-[9px] text-slate-500">Current Value</p><p class="font-bold text-green-500">$6,420</p></div>
-                                    </div>
-                                    <p class="text-xs font-semibold text-white mt-4 mb-2">Daily Returns</p>
-                                    <div class="space-y-1">
-                                        <div class="flex justify-between text-sm"><span class="text-slate-400">Mon 1</span><span class="text-green-500">+$175</span></div>
-                                        <div class="flex justify-between text-sm"><span class="text-slate-400">Mon 2</span><span class="text-green-500">+$181</span></div>
-                                        <div class="flex justify-between text-sm"><span class="text-slate-400">Mon 3</span><span class="text-green-500">+$187</span></div>
-                                        <div class="flex justify-between text-sm"><span class="text-slate-400">Mon 4</span><span class="text-green-500">+$194</span></div>
-                                        <div class="flex justify-between text-sm"><span class="text-slate-400">Mon 5</span><span class="text-green-500">+$201</span></div>
-                                        <div class="flex justify-between text-sm"><span class="text-slate-400">Mon 6</span><span class="text-green-500">+$208</span></div>
-                                    </div>
-                                </div>
-                                <div class="shrink-0 border-t border-slate-800/80 bg-slate-950/95 px-4 py-2 flex items-center justify-between">
-                                    <div class="flex flex-col items-center gap-0.5"><svg class="w-4 h-4 text-slate-500" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="m2.25 12 8.954-8.955c.44-.439 1.152-.439 1.591 0L21.75 12M4.5 9.75v10.125c0 .621.504 1.125 1.125 1.125H9.75v-4.875c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125V21h4.125c.621 0 1.125-.504 1.125-1.125V9.75M8.25 21h8.25"/></svg><span class="text-[7px] text-slate-500 font-medium">Home</span></div>
-                                    <div class="flex flex-col items-center gap-0.5"><svg class="w-4 h-4 text-blue-400" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M3 13.125C3 12.504 3.504 12 4.125 12h2.25c.621 0 1.125.504 1.125 1.125v6.75C7.5 20.496 6.996 21 6.375 21h-2.25A1.125 1.125 0 0 1 3 19.875v-6.75ZM9.75 8.625c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125v11.25c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 0 1-1.125-1.125V8.625ZM16.5 4.125c0-.621.504-1.125 1.125-1.125h2.25C20.496 3 21 3.504 21 4.125v15.75c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 0 1-1.125-1.125V4.125Z"/></svg><span class="text-[7px] text-blue-400 font-medium">Plans</span></div>
-                                    <div class="flex flex-col items-center gap-0.5"><svg class="w-4 h-4 text-slate-500" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M21 12a2.25 2.25 0 0 0-2.25-2.25H15a3 3 0 1 1-6 0H5.25A2.25 2.25 0 0 0 3 12m18 0v6a2.25 2.25 0 0 1-2.25 2.25H5.25A2.25 2.25 0 0 1 3 18v-6m18 0V9M3 12V9m18 0a2.25 2.25 0 0 0-2.25-2.25H5.25A2.25 2.25 0 0 0 3 9m18 0V6a2.25 2.25 0 0 0-2.25-2.25H5.25A2.25 2.25 0 0 0 3 6v3"/></svg><span class="text-[7px] text-slate-500 font-medium">Wallet</span></div>
-                                    <div class="flex flex-col items-center gap-0.5"><svg class="w-4 h-4 text-slate-500" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 6a3.75 3.75 0 1 1-7.5 0 3.75 3.75 0 0 1 7.5 0ZM4.501 20.118a7.5 7.5 0 0 1 14.998 0A17.933 17.933 0 0 1 12 21.75c-2.676 0-5.216-.584-7.499-1.632Z"/></svg><span class="text-[7px] text-slate-500 font-medium">Profile</span></div>
-                                </div>
-                                <div class="flex justify-center pb-2 pt-0.5 shrink-0"><div class="w-24 h-1 bg-white/20 rounded-full"></div></div>
-                            </div>
+// POST /login – alias for /signin
+router.post('/login', async (req, res) => {
+  try {
+    const { email, password } = req.body;
+    const user = await db.get('SELECT * FROM users WHERE email = ?', [email]);
+    if (!user) {
+      req.flash('error', 'Invalid credentials');
+      return res.redirect('/signin');
+    }
+    const valid = await bcrypt.compare(password, user.password);
+    if (!valid) {
+      req.flash('error', 'Invalid credentials');
+      return res.redirect('/signin');
+    }
+    req.session.userId = user.id;
+    await db.run('UPDATE users SET last_login = CURRENT_TIMESTAMP WHERE id = ?', [user.id]);
+    try {
+      await db.run(
+        `INSERT INTO activity_log (user_id, action, type, description, created_at)
+         VALUES (?, ?, ?, ?, CURRENT_TIMESTAMP)`,
+        [user.id, 'login', 'auth', 'User logged in']
+      );
+    } catch (logError) { /* ignore */ }
+    res.redirect('/dashboard');
+  } catch (error) {
+    console.error('Login error:', error);
+    req.flash('error', 'Login failed');
+    res.redirect('/signin');
+  }
+});
 
-                            <!-- Page Indicator Dots -->
-                            <div class="absolute bottom-[4.5rem] left-0 right-0 z-30 phone-dots">
-                                <span class="phone-dot active" data-index="0"></span>
-                                <span class="phone-dot" data-index="1"></span>
-                                <span class="phone-dot" data-index="2"></span>
-                                <span class="phone-dot" data-index="3"></span>
-                            </div>
+// ==================== LOGOUT ====================
+router.get('/logout', (req, res) => {
+  req.session.destroy(() => {
+    res.redirect('/signin');
+  });
+});
 
-                        </div>
-                    </div>
-                    <div class="absolute -top-12 -right-12 size-72 bg-blue-500/10 rounded-full blur-3xl -z-10 animate-pulse-slow"></div>
-                    <div class="absolute -bottom-12 -left-12 size-72 bg-green-500/10 rounded-full blur-3xl -z-10"></div>
-                </div>
-            </div>
-        </div>
-    </section>
+// ==================== FORGOT PASSWORD ====================
+router.get('/forgot-password', (req, res) => {
+  res.render('auth/forgot-password', { title: 'Forgot Password', error: req.flash('error'), success: req.flash('success') });
+});
 
-    <!-- Trust section -->
-    <section class="border-y border-slate-200/80 bg-slate-50/80" id="sec-trust">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12 lg:py-16">
-            <div class="hidden sm:grid sm:grid-cols-2 lg:grid-cols-4 gap-10 lg:gap-8">
-                <div class="gsap-trust-item">
-                    <div class="w-10 h-10 rounded-lg bg-slate-200/70 flex items-center justify-center mb-4"><svg class="w-5 h-5 text-slate-600" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75 11.25 15 15 9.75m-3-7.036A11.959 11.959 0 0 1 3.598 6 11.99 11.99 0 0 0 3 9.749c0 5.592 3.824 10.29 9 11.623 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.571-.598-3.751h-.152c-3.196 0-6.1-1.248-8.25-3.285Z"/></svg></div>
-                    <h3 class="text-sm font-semibold text-slate-900">Secure Infrastructure</h3>
-                    <p class="mt-2 text-sm text-slate-500 leading-relaxed">256-bit SSL encryption on all data in transit. Your credentials and financial information are protected at every layer.</p>
-                </div>
-                <div class="gsap-trust-item">
-                    <div class="w-10 h-10 rounded-lg bg-slate-200/70 flex items-center justify-center mb-4"><svg class="w-5 h-5 text-slate-600" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M3 13.125C3 12.504 3.504 12 4.125 12h2.25c.621 0 1.125.504 1.125 1.125v6.75C7.5 20.496 6.996 21 6.375 21h-2.25A1.125 1.125 0 0 1 3 19.875v-6.75ZM9.75 8.625c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125v11.25c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 0 1-1.125-1.125V8.625ZM16.5 4.125c0-.621.504-1.125 1.125-1.125h2.25C20.496 3 21 3.504 21 4.125v15.75c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 0 1-1.125-1.125V4.125Z"/></svg></div>
-                    <h3 class="text-sm font-semibold text-slate-900">Transparent ROI Structure</h3>
-                    <p class="mt-2 text-sm text-slate-500 leading-relaxed">Every plan shows its exact return rate, duration, and compounding method. No hidden fees, no ambiguous terms.</p>
-                </div>
-                <div class="gsap-trust-item">
-                    <div class="w-10 h-10 rounded-lg bg-slate-200/70 flex items-center justify-center mb-4"><svg class="w-5 h-5 text-slate-600" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75 11.25 15 15 9.75M21 12c0 1.268-.63 2.39-1.593 3.068a3.745 3.745 0 0 1-1.043 3.296 3.745 3.745 0 0 1-3.296 1.043A3.745 3.745 0 0 1 12 21c-1.268 0-2.39-.63-3.068-1.593a3.746 3.746 0 0 1-3.296-1.043 3.745 3.745 0 0 1-1.043-3.296A3.745 3.745 0 0 1 3 12c0-1.268.63-2.39 1.593-3.068a3.745 3.745 0 0 1 1.043-3.296 3.746 3.746 0 0 1 3.296-1.043A3.746 3.746 0 0 1 12 3c1.268 0 2.39.63 3.068 1.593a3.746 3.746 0 0 1 3.296 1.043 3.745 3.745 0 0 1 1.043 3.296A3.745 3.745 0 0 1 21 12Z"/></svg></div>
-                    <h3 class="text-sm font-semibold text-slate-900">Manually Verified Deposits</h3>
-                    <p class="mt-2 text-sm text-slate-500 leading-relaxed">Every deposit is reviewed and confirmed by our operations team before funds are credited to your account.</p>
-                </div>
-                <div class="gsap-trust-item">
-                    <div class="w-10 h-10 rounded-lg bg-slate-200/70 flex items-center justify-center mb-4"><svg class="w-5 h-5 text-slate-600" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 21a9.004 9.004 0 0 0 8.716-6.747M12 21a9.004 9.004 0 0 1-8.716-6.747M12 21c2.485 0 4.5-4.03 4.5-9S14.485 3 12 3m0 18c-2.485 0-4.5-4.03-4.5-9S9.515 3 12 3m0 0a8.997 8.997 0 0 1 7.843 4.582M12 3a8.997 8.997 0 0 0-7.843 4.582m15.686 0A11.953 11.953 0 0 1 12 10.5c-2.998 0-5.74-1.1-7.843-2.918m15.686 0A8.959 8.959 0 0 1 21 12c0 .778-.099 1.533-.284 2.253m0 0A17.919 17.919 0 0 1 12 16.5a17.92 17.92 0 0 1-8.716-2.247m0 0A9.015 9.015 0 0 1 3 12c0-1.605.42-3.113 1.157-4.418"/></svg></div>
-                    <h3 class="text-sm font-semibold text-slate-900">Three Countries Supported</h3>
-                    <p class="mt-2 text-sm text-slate-500 leading-relaxed">Available in the United States (USD), United Kingdom (GBP), and Canada (CAD). Dashboards adapt to your local currency.</p>
-                </div>
-            </div>
-        </div>
-    </section>
+router.post('/forgot-password', async (req, res) => {
+  try {
+    const { email } = req.body;
+    if (!email) {
+      req.flash('error', 'Email is required');
+      return res.redirect('/forgot-password');
+    }
+    const user = await db.get('SELECT id, email FROM users WHERE email = ?', [email]);
+    if (!user) {
+      req.flash('error', 'No account found with that email');
+      return res.redirect('/forgot-password');
+    }
+    const token = crypto.randomBytes(32).toString('hex');
+    const expiry = new Date(Date.now() + 3600000).toISOString(); // 1 hour
+    await db.run('UPDATE users SET reset_token = ?, reset_token_expiry = ? WHERE id = ?', [token, expiry, user.id]);
+    try {
+      await sendResetPasswordEmail(email, token);
+      req.flash('success', 'Password reset link sent to your email.');
+    } catch (err) {
+      console.error('Reset email error:', err);
+      req.flash('error', 'Failed to send reset email');
+    }
+    res.redirect('/forgot-password');
+  } catch (error) {
+    console.error('Forgot password error:', error);
+    req.flash('error', 'Failed to process request');
+    res.redirect('/forgot-password');
+  }
+});
 
-    <!-- How it works -->
-    <section class="py-14 sm:py-20 lg:py-28 bg-white" id="sec-how">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="max-w-2xl mb-10 sm:mb-16 gsap-heading">
-                <h2 class="text-2xl sm:text-3xl lg:text-4xl font-bold text-slate-900 tracking-tight">How it works</h2>
-                <p class="mt-3 sm:mt-4 text-sm sm:text-base text-slate-500 leading-relaxed">Four steps from account creation to structured returns. No intermediaries, no complexity.</p>
-            </div>
-            <div class="hidden sm:grid sm:grid-cols-2 lg:grid-cols-4 gap-x-8 gap-y-12">
-                <div class="relative gsap-step">
-                    <div class="flex items-center gap-3 mb-4"><span class="flex items-center justify-center w-9 h-9 rounded-lg bg-slate-100 text-sm font-bold text-slate-400 select-none">01</span>
-                        <div class="flex-1 h-px bg-slate-100 hidden sm:block"></div>
-                    </div>
-                    <h3 class="text-base font-semibold text-slate-900">Create your account</h3>
-                    <p class="mt-2 text-sm text-slate-500 leading-relaxed">Register with your name, email, and country. Your dashboard is automatically configured for your local currency and region.</p>
-                </div>
-                <div class="relative gsap-step">
-                    <div class="flex items-center gap-3 mb-4"><span class="flex items-center justify-center w-9 h-9 rounded-lg bg-slate-100 text-sm font-bold text-slate-400 select-none">02</span>
-                        <div class="flex-1 h-px bg-slate-100 hidden sm:block"></div>
-                    </div>
-                    <h3 class="text-base font-semibold text-slate-900">Deposit funds</h3>
-                    <p class="mt-2 text-sm text-slate-500 leading-relaxed">Fund your wallet via bank transfer or cryptocurrency. All deposits are manually reviewed and confirmed by our operations team.</p>
-                </div>
-                <div class="relative gsap-step">
-                    <div class="flex items-center gap-3 mb-4"><span class="flex items-center justify-center w-9 h-9 rounded-lg bg-slate-100 text-sm font-bold text-slate-400 select-none">03</span>
-                        <div class="flex-1 h-px bg-slate-100 hidden sm:block"></div>
-                    </div>
-                    <h3 class="text-base font-semibold text-slate-900">Select an investment plan</h3>
-                    <p class="mt-2 text-sm text-slate-500 leading-relaxed">Choose a plan based on duration and return rate. Longer-duration plans offer higher returns. Each plan clearly states its terms.</p>
-                </div>
-                <div class="relative gsap-step">
-                    <div class="flex items-center gap-3 mb-4"><span class="flex items-center justify-center w-9 h-9 rounded-lg bg-slate-100 text-sm font-bold text-slate-400 select-none">04</span>
-                        <div class="flex-1 h-px bg-slate-100 hidden sm:block"></div>
-                    </div>
-                    <h3 class="text-base font-semibold text-slate-900">Earn structured returns</h3>
-                    <p class="mt-2 text-sm text-slate-500 leading-relaxed">Returns are calculated daily using compound interest. At maturity, your capital and earnings are available for withdrawal.</p>
-                </div>
-            </div>
-        </div>
-    </section>
+// ==================== RESET PASSWORD ====================
+router.get('/reset-password', async (req, res) => {
+  const { token } = req.query;
+  if (!token) {
+    req.flash('error', 'Invalid reset token');
+    return res.redirect('/forgot-password');
+  }
+  try {
+    const user = await db.get('SELECT id FROM users WHERE reset_token = ? AND reset_token_expiry > CURRENT_TIMESTAMP', [token]);
+    if (!user) {
+      req.flash('error', 'Invalid or expired reset token');
+      return res.redirect('/forgot-password');
+    }
+    res.render('auth/reset-password', { title: 'Reset Password', token, error: req.flash('error'), success: req.flash('success') });
+  } catch (error) {
+    console.error('Reset page error:', error);
+    req.flash('error', 'Invalid reset link');
+    res.redirect('/forgot-password');
+  }
+});
 
-    <!-- ===== INVESTMENT PLANS SECTION – SELECT PLAN PHONE ===== -->
-    <section class="py-20 lg:py-28 bg-slate-50 border-y border-slate-200/60" id="sec-plans">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="max-w-2xl mx-auto text-center mb-16 gsap-heading">
-                <h2 class="text-3xl sm:text-4xl font-bold text-slate-900 tracking-tight">Duration-based investment structure</h2>
-                <p class="mt-4 text-base text-slate-500 leading-relaxed">
-                    Each plan operates on a fixed duration with a stated daily return rate. Longer commitments receive higher rates. All returns are compounded daily unless stated otherwise.
-                </p>
-            </div>
+router.post('/reset-password', async (req, res) => {
+  try {
+    const { token, password, confirm } = req.body;
+    if (!token || !password) {
+      req.flash('error', 'All fields are required');
+      return res.redirect(`/reset-password?token=${token}`);
+    }
+    if (password !== confirm) {
+      req.flash('error', 'Passwords do not match');
+      return res.redirect(`/reset-password?token=${token}`);
+    }
+    if (password.length < 8) {
+      req.flash('error', 'Password must be at least 8 characters');
+      return res.redirect(`/reset-password?token=${token}`);
+    }
+    const user = await db.get('SELECT id FROM users WHERE reset_token = ? AND reset_token_expiry > CURRENT_TIMESTAMP', [token]);
+    if (!user) {
+      req.flash('error', 'Invalid or expired reset token');
+      return res.redirect('/forgot-password');
+    }
+    const hashed = await bcrypt.hash(password, 10);
+    await db.run('UPDATE users SET password = ?, reset_token = NULL, reset_token_expiry = NULL WHERE id = ?', [hashed, user.id]);
+    try {
+      await db.run(
+        `INSERT INTO activity_log (user_id, action, type, description, created_at)
+         VALUES (?, ?, ?, ?, CURRENT_TIMESTAMP)`,
+        [user.id, 'password_reset', 'security', 'Password reset']
+      );
+    } catch (e) {}
+    req.flash('success', 'Password reset successfully. Please sign in.');
+    res.redirect('/signin');
+  } catch (error) {
+    console.error('Reset password error:', error);
+    req.flash('error', 'Failed to reset password');
+    res.redirect('/forgot-password');
+  }
+});
 
-            <div class="lg:grid lg:grid-cols-12 lg:gap-10 lg:items-start">
-                <!-- Desktop plan grid -->
-                <div class="lg:col-span-8">
-                    <div class="hidden sm:grid sm:grid-cols-2 sm:gap-5 lg:grid-cols-2 landing-plan-grid">
-                        <!-- 108 Circle -->
-                        <div class="bg-white rounded-xl border border-slate-200/80 p-6 relative gsap-plan-card">
-                            <div class="mb-5">
-                                <h3 class="text-base font-bold text-slate-900">108 Circle</h3>
-                                <p class="mt-1 text-sm text-slate-400 line-clamp-2">Entry-level investment circle. Perfect for new investors looking to start with a modest amount and earn steady returns.</p>
-                            </div>
-                            <div class="space-y-0">
-                                <div class="flex justify-between items-center py-2.5 border-b border-slate-100"><span class="text-sm text-slate-500">Duration</span><span class="text-sm font-semibold text-slate-900">1 month</span></div>
-                                <div class="flex justify-between items-center py-2.5 border-b border-slate-100"><span class="text-sm text-slate-500">ROI</span><span class="text-sm font-semibold text-slate-900">200%</span></div>
-                                <div class="flex justify-between items-center py-2.5 border-b border-slate-100"><span class="text-sm text-slate-500">Compounding</span><span class="text-sm font-semibold text-slate-900">Simple</span></div>
-                                <div class="flex justify-between items-center py-2.5"><span class="text-sm text-slate-500">Range</span><span class="text-sm font-semibold text-slate-900">$100 – $2,221</span></div>
-                            </div>
-                            <a href="/register" class="mt-5 block w-full text-center py-3 rounded-lg text-sm font-semibold transition-colors bg-slate-100 text-slate-700 hover:bg-slate-200">Select Plan</a>
-                        </div>
+// ==================== EMAIL VERIFICATION ====================
+router.get('/verify-email', async (req, res) => {
+  try {
+    const { token } = req.query;
+    if (!token) {
+      req.flash('error', 'Invalid verification token');
+      return res.redirect('/signin');
+    }
+    const result = await db.run('UPDATE users SET email_verified = 1, email_verify_token = NULL WHERE email_verify_token = ? AND email_verified = 0', [token]);
+    if (result.changes === 0) {
+      req.flash('error', 'Token expired or already used');
+    } else {
+      req.flash('success', 'Email verified! You can now sign in.');
+    }
+    res.redirect('/signin');
+  } catch (error) {
+    console.error('Verification error:', error);
+    req.flash('error', 'Verification failed');
+    res.redirect('/signin');
+  }
+});
 
-                        <!-- 2222 Investment -->
-                        <div class="bg-white rounded-xl border border-slate-200/80 p-6 relative gsap-plan-card">
-                            <div class="mb-5">
-                                <h3 class="text-base font-bold text-slate-900">2222 Investment</h3>
-                                <p class="mt-1 text-sm text-slate-400 line-clamp-2">Mid-tier plan with enhanced returns for growing portfolios. Ideal for investors stepping up their capital.</p>
-                            </div>
-                            <div class="space-y-0">
-                                <div class="flex justify-between items-center py-2.5 border-b border-slate-100"><span class="text-sm text-slate-500">Duration</span><span class="text-sm font-semibold text-slate-900">1 month</span></div>
-                                <div class="flex justify-between items-center py-2.5 border-b border-slate-100"><span class="text-sm text-slate-500">ROI</span><span class="text-sm font-semibold text-slate-900">200%</span></div>
-                                <div class="flex justify-between items-center py-2.5 border-b border-slate-100"><span class="text-sm text-slate-500">Compounding</span><span class="text-sm font-semibold text-slate-900">Simple</span></div>
-                                <div class="flex justify-between items-center py-2.5"><span class="text-sm text-slate-500">Range</span><span class="text-sm font-semibold text-slate-900">$2,222 – $7,999</span></div>
-                            </div>
-                            <a href="/register" class="mt-5 block w-full text-center py-3 rounded-lg text-sm font-semibold transition-colors bg-slate-100 text-slate-700 hover:bg-slate-200">Select Plan</a>
-                        </div>
+// ==================== PROFILE UPDATE (from dashboard) ====================
+router.post('/profile/update', async (req, res) => {
+  try {
+    const userId = req.session.userId;
+    const { first_name, last_name } = req.body;
+    await db.run('UPDATE users SET first_name = ?, last_name = ? WHERE id = ?', [first_name, last_name, userId]);
 
-                        <!-- 8888 Investment -->
-                        <div class="bg-white rounded-xl border border-slate-300 ring-1 ring-slate-200 p-6 relative gsap-plan-card">
-                            <div class="absolute top-0 right-5 -translate-y-1/2"><span class="inline-flex items-center bg-slate-900 text-white text-[10px] font-semibold px-3 py-1 rounded-full tracking-wider uppercase">Most Selected</span></div>
-                            <div class="mb-5 mt-1">
-                                <h3 class="text-base font-bold text-slate-900">8888 Investment</h3>
-                                <p class="mt-1 text-sm text-slate-400 line-clamp-2">Premium investment tier offering high-yield returns for serious investors with substantial capital.</p>
-                            </div>
-                            <div class="space-y-0">
-                                <div class="flex justify-between items-center py-2.5 border-b border-slate-100"><span class="text-sm text-slate-500">Duration</span><span class="text-sm font-semibold text-slate-900">1 month</span></div>
-                                <div class="flex justify-between items-center py-2.5 border-b border-slate-100"><span class="text-sm text-slate-500">ROI</span><span class="text-sm font-semibold text-slate-900">300%</span></div>
-                                <div class="flex justify-between items-center py-2.5 border-b border-slate-100"><span class="text-sm text-slate-500">Compounding</span><span class="text-sm font-semibold text-slate-900">Simple</span></div>
-                                <div class="flex justify-between items-center py-2.5"><span class="text-sm text-slate-500">Range</span><span class="text-sm font-semibold text-slate-900">$8,000 – $14,999</span></div>
-                            </div>
-                            <a href="/register" class="mt-5 block w-full text-center py-3 rounded-lg text-sm font-semibold transition-colors bg-slate-900 text-white hover:bg-slate-800">Select Plan</a>
-                        </div>
+    try {
+      await db.run(
+        `INSERT INTO activity_log (user_id, action, type, description, created_at)
+         VALUES (?, ?, ?, ?, CURRENT_TIMESTAMP)`,
+        [userId, 'profile_update', 'profile', 'Updated profile']
+      );
+    } catch (logError) { /* ignore */ }
 
-                        <!-- Tier 3 Investment -->
-                        <div class="bg-white rounded-xl border border-slate-300 ring-1 ring-slate-200 p-6 relative gsap-plan-card">
-                            <div class="absolute top-0 right-5 -translate-y-1/2"><span class="inline-flex items-center bg-slate-900 text-white text-[10px] font-semibold px-3 py-1 rounded-full tracking-wider uppercase">Most Selected</span></div>
-                            <div class="mb-5 mt-1">
-                                <h3 class="text-base font-bold text-slate-900">Tier 3 Investment</h3>
-                                <p class="mt-1 text-sm text-slate-400 line-clamp-2">Exclusive high-performance plan for experienced investors seeking aggressive growth with larger capital deployment.</p>
-                            </div>
-                            <div class="space-y-0">
-                                <div class="flex justify-between items-center py-2.5 border-b border-slate-100"><span class="text-sm text-slate-500">Duration</span><span class="text-sm font-semibold text-slate-900">1 month</span></div>
-                                <div class="flex justify-between items-center py-2.5 border-b border-slate-100"><span class="text-sm text-slate-500">ROI</span><span class="text-sm font-semibold text-slate-900">350%</span></div>
-                                <div class="flex justify-between items-center py-2.5 border-b border-slate-100"><span class="text-sm text-slate-500">Compounding</span><span class="text-sm font-semibold text-slate-900">Simple</span></div>
-                                <div class="flex justify-between items-center py-2.5"><span class="text-sm text-slate-500">Range</span><span class="text-sm font-semibold text-slate-900">$15,000 – $19,999</span></div>
-                            </div>
-                            <a href="/register" class="mt-5 block w-full text-center py-3 rounded-lg text-sm font-semibold transition-colors bg-slate-900 text-white hover:bg-slate-800">Select Plan</a>
-                        </div>
+    req.flash('success', 'Profile updated successfully');
+    res.redirect('/dashboard/profile');
+  } catch (error) {
+    console.error('Profile update error:', error);
+    req.flash('error', 'Failed to update profile');
+    res.redirect('/dashboard/profile');
+  }
+});
 
-                        <!-- Bitcoin Elite Group -->
-                        <div class="bg-white rounded-xl border border-slate-300 ring-1 ring-slate-200 p-6 relative gsap-plan-card">
-                            <div class="absolute top-0 right-5 -translate-y-1/2"><span class="inline-flex items-center bg-slate-900 text-white text-[10px] font-semibold px-3 py-1 rounded-full tracking-wider uppercase">Most Selected</span></div>
-                            <div class="mb-5 mt-1">
-                                <h3 class="text-base font-bold text-slate-900">Bitcoin Elite Group</h3>
-                                <p class="mt-1 text-sm text-slate-400 line-clamp-2">The ultimate short-term, high-yield opportunity. Two-week accelerated investment cycle with maximum returns for elite investors.</p>
-                            </div>
-                            <div class="space-y-0">
-                                <div class="flex justify-between items-center py-2.5 border-b border-slate-100"><span class="text-sm text-slate-500">Duration</span><span class="text-sm font-semibold text-slate-900">2 weeks</span></div>
-                                <div class="flex justify-between items-center py-2.5 border-b border-slate-100"><span class="text-sm text-slate-500">ROI</span><span class="text-sm font-semibold text-slate-900">750%</span></div>
-                                <div class="flex justify-between items-center py-2.5 border-b border-slate-100"><span class="text-sm text-slate-500">Compounding</span><span class="text-sm font-semibold text-slate-900">Simple</span></div>
-                                <div class="flex justify-between items-center py-2.5"><span class="text-sm text-slate-500">Range</span><span class="text-sm font-semibold text-slate-900">$20,000 – $999,999,999</span></div>
-                            </div>
-                            <a href="/register" class="mt-5 block w-full text-center py-3 rounded-lg text-sm font-semibold transition-colors bg-slate-900 text-white hover:bg-slate-800">Select Plan</a>
-                        </div>
-                    </div>
-
-                    <!-- Mobile plan cards -->
-                    <div class="sm:hidden space-y-4">
-                        <div class="bg-white rounded-xl border border-slate-200/80 p-4">
-                            <h3 class="text-sm font-bold text-slate-900">108 Circle</h3>
-                            <div class="flex justify-between text-xs text-slate-500 mt-1"><span>1 month</span><span>200%</span></div>
-                            <p class="text-xs text-slate-400 mt-1">$100 – $2,221</p>
-                            <a href="/register" class="mt-3 block w-full text-center py-2 bg-slate-100 text-slate-700 rounded-lg text-xs font-semibold">Select Plan</a>
-                        </div>
-                        <div class="bg-white rounded-xl border border-slate-200/80 p-4">
-                            <h3 class="text-sm font-bold text-slate-900">2222 Investment</h3>
-                            <div class="flex justify-between text-xs text-slate-500 mt-1"><span>1 month</span><span>200%</span></div>
-                            <p class="text-xs text-slate-400 mt-1">$2,222 – $7,999</p>
-                            <a href="/register" class="mt-3 block w-full text-center py-2 bg-slate-100 text-slate-700 rounded-lg text-xs font-semibold">Select Plan</a>
-                        </div>
-                        <div class="bg-white rounded-xl border border-slate-300 ring-1 ring-slate-200 p-4 relative">
-                            <span class="absolute top-0 right-3 -translate-y-1/2 bg-slate-900 text-white text-[8px] font-semibold px-2 py-0.5 rounded-full">Most Selected</span>
-                            <h3 class="text-sm font-bold text-slate-900 mt-1">8888 Investment</h3>
-                            <div class="flex justify-between text-xs text-slate-500 mt-1"><span>1 month</span><span>300%</span></div>
-                            <p class="text-xs text-slate-400 mt-1">$8,000 – $14,999</p>
-                            <a href="/register" class="mt-3 block w-full text-center py-2 bg-slate-900 text-white rounded-lg text-xs font-semibold">Select Plan</a>
-                        </div>
-                        <div class="bg-white rounded-xl border border-slate-300 ring-1 ring-slate-200 p-4 relative">
-                            <span class="absolute top-0 right-3 -translate-y-1/2 bg-slate-900 text-white text-[8px] font-semibold px-2 py-0.5 rounded-full">Most Selected</span>
-                            <h3 class="text-sm font-bold text-slate-900 mt-1">Tier 3 Investment</h3>
-                            <div class="flex justify-between text-xs text-slate-500 mt-1"><span>1 month</span><span>350%</span></div>
-                            <p class="text-xs text-slate-400 mt-1">$15,000 – $19,999</p>
-                            <a href="/register" class="mt-3 block w-full text-center py-2 bg-slate-900 text-white rounded-lg text-xs font-semibold">Select Plan</a>
-                        </div>
-                        <div class="bg-white rounded-xl border border-slate-300 ring-1 ring-slate-200 p-4 relative">
-                            <span class="absolute top-0 right-3 -translate-y-1/2 bg-slate-900 text-white text-[8px] font-semibold px-2 py-0.5 rounded-full">Most Selected</span>
-                            <h3 class="text-sm font-bold text-slate-900 mt-1">Bitcoin Elite Group</h3>
-                            <div class="flex justify-between text-xs text-slate-500 mt-1"><span>2 weeks</span><span>750%</span></div>
-                            <p class="text-xs text-slate-400 mt-1">$20,000 – $999,999,999</p>
-                            <a href="/register" class="mt-3 block w-full text-center py-2 bg-slate-900 text-white rounded-lg text-xs font-semibold">Select Plan</a>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Sidebar Phone – Select Plan -->
-                <div class="hidden lg:block lg:col-span-4 relative parallax-layer" data-parallax-speed="0.03">
-                    <div class="sticky top-8">
-                        <div class="relative mx-auto" style="max-width:260px">
-                            <div class="absolute -inset-10 bg-blue-500/[0.025] rounded-full blur-[80px] iphone-glow"></div>
-                            <div class="relative">
-                                <div class="bg-[#1a1a1e] rounded-[2.6rem] p-[3px] shadow-xl shadow-black/40" style="box-shadow: 0 0 0 1px rgba(255,255,255,0.06), 0 30px 60px -10px rgba(0,0,0,0.5);">
-                                    <div class="bg-[#2a2a2e] rounded-[2.45rem] p-[2px]">
-                                        <div class="bg-black rounded-[2.3rem] overflow-hidden">
-                                            <div class="absolute top-3 left-1/2 -translate-x-1/2 z-10 w-[85px] h-[24px] bg-black rounded-full" style="box-shadow: inset 0 0 0 1px rgba(255,255,255,0.04);"></div>
-                                            <div class="relative bg-slate-950">
-                                                <div class="flex items-center justify-between px-7 pt-3 pb-0.5">
-                                                    <span class="text-[10px] font-semibold text-white/80 tabular-nums">9:41</span>
-                                                    <div class="flex items-center gap-1">
-                                                        <svg class="w-3.5 h-3.5 text-white/80" viewBox="0 0 24 24" fill="currentColor"><path d="M12 3C7.8 3 4.1 4.9 1.7 7.9l1.5 1.3C5.3 6.6 8.5 5 12 5s6.7 1.6 8.8 4.2l1.5-1.3C19.9 4.9 16.2 3 12 3zm0 4c-2.8 0-5.3 1.2-7 3.2l1.5 1.3C8 9.9 9.9 9 12 9s4 .9 5.5 2.5l1.5-1.3c-1.7-2-4.2-3.2-7-3.2zm0 4c-1.5 0-2.9.7-3.8 1.8L12 15.5l3.8-2.7C14.9 11.7 13.5 11 12 11z"/></svg>
-                                                        <div class="w-6 h-2.5 border border-white/50 rounded-[2px] ml-0.5 relative"><div class="absolute inset-[1.5px] right-[2px] bg-white/80 rounded-[1px]" style="width:70%"></div></div>
-                                                    </div>
-                                                </div>
-                                                <div class="flex items-center justify-between px-4 pt-2 pb-1">
-                                                    <span class="text-[11px] font-bold text-white">XSpaceFinance</span>
-                                                    <div class="size-7 rounded-full bg-slate-800 grid place-items-center border border-slate-700">
-                                                        <span class="text-[9px] font-bold text-slate-400">JD</span>
-                                                    </div>
-                                                </div>
-                                                <div class="px-4 pb-3">
-                                                    <p class="text-[11px] font-bold text-white mb-3">Select Plan</p>
-                                                    <div class="space-y-2.5">
-                                                        <div class="plan-card-phone p-2.5 rounded-xl border-2 border-blue-500 bg-blue-500/10">
-                                                            <div class="flex justify-between items-start"><div><p class="font-bold text-white text-xs">108 Circle</p><p class="text-[8px] text-slate-400">1 month · Simple</p></div><span class="text-[8px] font-bold text-blue-400">200%</span></div>
-                                                            <div class="flex justify-between mt-1"><span class="text-[8px] text-slate-500">$100 – $2,221</span><span class="text-[8px] font-bold text-blue-400">SELECTED</span></div>
-                                                        </div>
-                                                        <div class="plan-card-phone p-2.5 rounded-xl border border-slate-700 relative">
-                                                            <div class="absolute -top-1.5 right-2.5"><span class="bg-blue-500 text-[6px] text-white font-bold px-1.5 py-0.5 rounded-full uppercase tracking-wider">Popular</span></div>
-                                                            <div class="flex justify-between items-start"><div><p class="font-bold text-white text-xs">8888 Investment</p><p class="text-[8px] text-slate-400">1 month · Simple</p></div><span class="text-[8px] font-bold text-blue-400">300%</span></div>
-                                                            <div class="flex justify-between mt-1"><span class="text-[8px] text-slate-500">$8,000 – $14,999</span></div>
-                                                        </div>
-                                                        <div class="plan-card-phone p-2.5 rounded-xl border border-slate-700 relative">
-                                                            <div class="absolute -top-1.5 right-2.5"><span class="bg-blue-500 text-[6px] text-white font-bold px-1.5 py-0.5 rounded-full uppercase tracking-wider">Popular</span></div>
-                                                            <div class="flex justify-between items-start"><div><p class="font-bold text-white text-xs">Bitcoin Elite Group</p><p class="text-[8px] text-slate-400">2 weeks · Simple</p></div><span class="text-[8px] font-bold text-blue-400">750%</span></div>
-                                                            <div class="flex justify-between mt-1"><span class="text-[8px] text-slate-500">$20,000 – $999,999,999</span></div>
-                                                        </div>
-                                                    </div>
-                                                    <div class="mt-3 pt-3 border-t border-slate-800/60">
-                                                        <p class="text-[8px] text-slate-500 mb-1">Investment Amount</p>
-                                                        <p class="text-2xl font-bold text-white">$5,000</p>
-                                                        <button class="w-full mt-2 py-2.5 bg-blue-600 rounded-lg text-sm font-semibold text-white hover:bg-blue-700 transition">Activate Investment</button>
-                                                    </div>
-                                                </div>
-                                                <div class="flex items-center justify-around px-4 py-2 border-t border-slate-800/60">
-                                                    <div class="flex flex-col items-center gap-px"><svg class="w-4 h-4 text-slate-600" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="m2.25 12 8.954-8.955c.44-.439 1.152-.439 1.591 0L21.75 12M4.5 9.75v10.125c0 .621.504 1.125 1.125 1.125H9.75v-4.875c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125V21h4.125c.621 0 1.125-.504 1.125-1.125V9.75M8.25 21h8.25"/></svg><span class="text-[7px] text-slate-600 font-medium">Home</span></div>
-                                                    <div class="flex flex-col items-center gap-px"><svg class="w-4 h-4 text-blue-400" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M3 13.125C3 12.504 3.504 12 4.125 12h2.25c.621 0 1.125.504 1.125 1.125v6.75C7.5 20.496 6.996 21 6.375 21h-2.25A1.125 1.125 0 0 1 3 19.875v-6.75ZM9.75 8.625c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125v11.25c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 0 1-1.125-1.125V8.625ZM16.5 4.125c0-.621.504-1.125 1.125-1.125h2.25C20.496 3 21 3.504 21 4.125v15.75c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 0 1-1.125-1.125V4.125Z"/></svg><span class="text-[7px] text-blue-400 font-medium">Plans</span></div>
-                                                    <div class="flex flex-col items-center gap-px"><svg class="w-4 h-4 text-slate-600" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M21 12a2.25 2.25 0 0 0-2.25-2.25H15a3 3 0 1 1-6 0H5.25A2.25 2.25 0 0 0 3 12m18 0v6a2.25 2.25 0 0 1-2.25 2.25H5.25A2.25 2.25 0 0 1 3 18v-6m18 0V9M3 12V9m18 0a2.25 2.25 0 0 0-2.25-2.25H5.25A2.25 2.25 0 0 0 3 9m18 0V6a2.25 2.25 0 0 0-2.25-2.25H5.25A2.25 2.25 0 0 0 3 6v3"/></svg><span class="text-[7px] text-slate-600 font-medium">Wallet</span></div>
-                                                    <div class="flex flex-col items-center gap-px"><svg class="w-4 h-4 text-slate-600" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 6a3.75 3.75 0 1 1-7.5 0 3.75 3.75 0 0 1 7.5 0ZM4.501 20.118a7.5 7.5 0 0 1 14.998 0A17.933 17.933 0 0 1 12 21.75c-2.676 0-5.216-.584-7.499-1.632Z"/></svg><span class="text-[7px] text-slate-600 font-medium">Profile</span></div>
-                                                </div>
-                                                <div class="flex justify-center pb-1.5 pt-0.5"><div class="w-24 h-1 bg-white/20 rounded-full"></div></div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <div class="mt-8 text-center">
-                <a href="/plans" class="inline-flex items-center text-sm font-semibold text-slate-600 hover:text-slate-900 transition-colors">View detailed plan comparison<svg class="ml-1 w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M13.5 4.5 21 12m0 0-7.5 7.5M21 12H3"/></svg></a>
-            </div>
-            <p class="mt-6 text-center text-xs text-slate-400 max-w-lg mx-auto">Projected returns are based on stated rates and compounding schedules. Past performance does not guarantee future results. All investments carry risk.</p>
-        </div>
-    </section>
-
-    <!-- Calculator -->
-    <section class="py-20 lg:py-28 bg-white" id="sec-calc">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-20 items-center">
-                <div class="gsap-calc-text">
-                    <p class="text-[11px] font-semibold text-slate-400 tracking-[0.15em] uppercase">ROI Calculator</p>
-                    <h2 class="mt-3 text-3xl sm:text-4xl font-bold text-slate-900 tracking-tight">Model your investment before you commit</h2>
-                    <p class="mt-4 text-base text-slate-500 leading-relaxed">Project potential returns across different plans and durations. The calculator uses the same compound interest formula applied to your actual investment.</p>
-                    <div class="mt-8 space-y-4">
-                        <div class="flex items-start gap-3"><svg class="w-4 h-4 text-slate-400 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="m4.5 12.75 6 6 9-13.5"/></svg>
-                            <p class="text-sm text-slate-600">Compound interest: <span class="font-mono text-xs bg-slate-100 px-1.5 py-0.5 rounded border border-slate-200/60">A = P(1 + r)<sup>n</sup></span></p>
-                        </div>
-                        <div class="flex items-start gap-3"><svg class="w-4 h-4 text-slate-400 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="m4.5 12.75 6 6 9-13.5"/></svg>
-                            <p class="text-sm text-slate-600">Compare plans side by side</p>
-                        </div>
-                        <div class="flex items-start gap-3"><svg class="w-4 h-4 text-slate-400 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="m4.5 12.75 6 6 9-13.5"/></svg>
-                            <p class="text-sm text-slate-600">Month-by-month growth breakdown available on full calculator</p>
-                        </div>
-                    </div>
-                    <a href="/calculator" class="mt-8 inline-flex items-center text-sm font-semibold text-slate-600 hover:text-slate-900 transition-colors">Open full calculator<svg class="ml-1 w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M13.5 4.5 21 12m0 0-7.5 7.5M21 12H3"/></svg></a>
-                </div>
-                <div class="bg-slate-50 rounded-xl border border-slate-200/80 p-6 sm:p-8 gsap-calc-widget">
-                    <div>
-                        <div class="flex items-center justify-between mb-3"><label for="calc-amount" class="text-sm font-medium text-slate-700">Investment Amount</label><span class="text-lg font-bold text-slate-900 tabular-nums" id="calc-amount-display">$10,000</span></div>
-                        <input type="range" id="calc-amount" min="1000" max="100000" step="1000" value="10000" class="w-full accent-slate-800">
-                        <div class="flex justify-between text-xs text-slate-400 mt-1.5"><span>$1,000</span><span>$100,000</span></div>
-                    </div>
-                    <div class="mt-7"><label class="text-sm font-medium text-slate-700 block mb-3">Select Plan</label>
-                        <div class="grid grid-cols-3 gap-2" id="calc-plan-buttons">
-                            <button type="button" class="plan-select-btn rounded-lg py-3 px-2 text-center border transition-all duration-150 bg-slate-900 text-white border-slate-900" data-rate="2.0" data-duration="1">108 Circle<span class="block text-[11px] mt-1 text-slate-400">1 mo / 200%</span></button>
-                            <button type="button" class="plan-select-btn rounded-lg py-3 px-2 text-center border transition-all duration-150 bg-white text-slate-600 border-slate-200 hover:border-slate-300" data-rate="2.0" data-duration="1">2222 Inv.<span class="block text-[11px] mt-1 text-slate-400">1 mo / 200%</span></button>
-                            <button type="button" class="plan-select-btn rounded-lg py-3 px-2 text-center border transition-all duration-150 bg-white text-slate-600 border-slate-200 hover:border-slate-300" data-rate="3.0" data-duration="1">8888 Inv.<span class="block text-[11px] mt-1 text-slate-400">1 mo / 300%</span></button>
-                            <button type="button" class="plan-select-btn rounded-lg py-3 px-2 text-center border transition-all duration-150 bg-white text-slate-600 border-slate-200 hover:border-slate-300" data-rate="3.5" data-duration="1">Tier 3<span class="block text-[11px] mt-1 text-slate-400">1 mo / 350%</span></button>
-                            <button type="button" class="plan-select-btn rounded-lg py-3 px-2 text-center border transition-all duration-150 bg-white text-slate-600 border-slate-200 hover:border-slate-300" data-rate="7.5" data-duration="0.5">Bitcoin Elite<span class="block text-[11px] mt-1 text-slate-400">2 wks / 750%</span></button>
-                        </div>
-                    </div>
-                    <div class="mt-8 bg-white rounded-lg p-5 border border-slate-100">
-                        <div class="grid grid-cols-3 divide-x divide-slate-100 text-center">
-                            <div class="px-2"><p class="text-[10px] font-semibold text-slate-400 uppercase tracking-wider">Invested</p><p class="mt-1.5 text-base font-bold text-slate-900 tabular-nums" id="calc-invested">$10,000</p></div>
-                            <div class="px-2"><p class="text-[10px] font-semibold text-slate-400 uppercase tracking-wider">Total Return</p><p class="mt-1.5 text-base font-bold text-slate-900 tabular-nums" id="calc-return">$30,000</p></div>
-                            <div class="px-2"><p class="text-[10px] font-semibold text-slate-400 uppercase tracking-wider">Net Gain</p><p class="mt-1.5 text-base font-bold text-emerald-700 tabular-nums" id="calc-profit">+$20,000</p></div>
-                        </div>
-                    </div>
-                    <p class="mt-4 text-[11px] text-slate-400 text-center">Compound interest projection. Actual returns may vary.</p>
-                </div>
-            </div>
-        </div>
-    </section>
-
-    <!-- Security -->
-    <section class="dark-preserve py-20 lg:py-28 bg-slate-950" id="sec-security">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="max-w-2xl mx-auto text-center mb-16 gsap-heading"><h2 class="text-3xl sm:text-4xl font-bold text-white tracking-tight">Security and transparency at every level</h2><p class="mt-4 text-base text-slate-400 leading-relaxed">Every action on the platform is verified, recorded, and communicated. You maintain full visibility over your account.</p></div>
-            <div class="grid grid-cols-1 sm:grid-cols-2 gap-5 lg:gap-6">
-                <div class="bg-slate-900/60 rounded-xl p-7 border border-slate-800/60"><div class="w-10 h-10 rounded-lg bg-slate-800 flex items-center justify-center mb-5"><svg class="w-5 h-5 text-slate-400" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15 9h3.75M15 12h3.75M15 15h3.75M4.5 19.5h15a2.25 2.25 0 0 0 2.25-2.25V6.75A2.25 2.25 0 0 0 19.5 4.5h-15a2.25 2.25 0 0 0-2.25 2.25v10.5A2.25 2.25 0 0 0 4.5 19.5Zm6-10.125a1.875 1.875 0 1 1-3.75 0 1.875 1.875 0 0 1 3.75 0Zm1.294 6.336a6.721 6.721 0 0 1-3.17.789 6.721 6.721 0 0 1-3.168-.789 3.376 3.376 0 0 1 6.338 0Z"/></svg></div><h3 class="text-base font-semibold text-white mb-2">Identity Verification (KYC)</h3><p class="text-sm text-slate-400 leading-relaxed">All users undergo identity verification before withdrawals are enabled. Accepted documents include passport, national ID, and driver's license.</p></div>
-                <div class="bg-slate-900/60 rounded-xl p-7 border border-slate-800/60"><div class="w-10 h-10 rounded-lg bg-slate-800 flex items-center justify-center mb-5"><svg class="w-5 h-5 text-slate-400" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 1 0-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 0 0 2.25-2.25v-6.75a2.25 2.25 0 0 0-2.25-2.25H6.75a2.25 2.25 0 0 0-2.25 2.25v6.75a2.25 2.25 0 0 0 2.25 2.25Z"/></svg></div><h3 class="text-base font-semibold text-white mb-2">Secure Withdrawals</h3><p class="text-sm text-slate-400 leading-relaxed">Withdrawal requests are processed within 24-48 business hours. All outgoing transfers are reviewed before execution. Bank and cryptocurrency withdrawals are supported.</p></div>
-                <div class="bg-slate-900/60 rounded-xl p-7 border border-slate-800/60"><div class="w-10 h-10 rounded-lg bg-slate-800 flex items-center justify-center mb-5"><svg class="w-5 h-5 text-slate-400" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 0 0-3.375-3.375h-1.5A1.125 1.125 0 0 1 13.5 7.125v-1.5a3.375 3.375 0 0 0-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 0 0-9-9Z"/></svg></div><h3 class="text-base font-semibold text-slate-900 dark:text-white mb-2">Audit-Grade Transaction History</h3><p class="text-sm text-slate-400 leading-relaxed">Every deposit, withdrawal, investment activation, and return credit is recorded with a unique reference code. Your full transaction history is always accessible.</p></div>
-                <div class="bg-slate-900/60 rounded-xl p-7 border border-slate-800/60"><div class="w-10 h-10 rounded-lg bg-slate-800 flex items-center justify-center mb-5"><svg class="w-5 h-5 text-slate-400" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M14.857 17.082a23.848 23.848 0 0 0 5.454-1.31A8.967 8.967 0 0 1 18 9.75V9A6 6 0 0 0 6 9v.75a8.967 8.967 0 0 1-2.312 6.022c1.733.64 3.56 1.085 5.455 1.31m5.714 0a24.255 24.255 0 0 1-5.714 0m5.714 0a3 3 0 1 1-5.714 0"/></svg></div><h3 class="text-base font-semibold text-white mb-2">Notifications for Every Action</h3><p class="text-sm text-slate-400 leading-relaxed">Receive email notifications for sign-ins, deposit confirmations, investment activations, withdrawal processing, KYC status updates, and daily income reports.</p></div>
-            </div>
-        </div>
-    </section>
-
-    <!-- CTA -->
-    <section class="py-20 lg:py-28 bg-white" id="sec-cta">
-        <div class="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8 text-center gsap-cta-block">
-            <h2 class="text-3xl sm:text-4xl font-bold text-slate-900 tracking-tight">Open your account</h2>
-            <p class="mt-4 text-base text-slate-500 max-w-md mx-auto leading-relaxed">Create a free account in under two minutes. Explore investment plans, use the calculator, and invest at your own pace.</p>
-            <div class="mt-10"><a href="/register" class="inline-flex items-center bg-slate-900 text-white px-9 py-4 rounded-xl text-sm font-semibold hover:bg-slate-800 transition-colors">Create Your Account<svg class="ml-2 w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M13.5 4.5 21 12m0 0-7.5 7.5M21 12H3"/></svg></a></div>
-            <p class="mt-6 text-sm text-slate-400">Free to register. No credit card required. No minimum commitment.</p>
-        </div>
-    </section>
-
-    <!-- Footer -->
-    <footer class="dark-preserve bg-slate-950 text-slate-400">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="py-16 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-10 lg:gap-12">
-                <div><a href="/" class="text-xl font-extrabold tracking-tight bg-gradient-to-r from-white via-blue-200 to-white bg-clip-text text-transparent">XSpaceFinance</a><p class="mt-4 text-sm leading-relaxed">Fixed-duration investment plans with transparent returns. Serving individual investors in the United States, United Kingdom, and Canada.</p></div>
-                <div><h4 class="text-sm font-semibold text-white uppercase tracking-wider mb-4">Platform</h4><ul class="space-y-3 text-sm"><li><a href="/plans" class="hover:text-white transition-colors">Investment Plans</a></li><li><a href="/calculator" class="hover:text-white transition-colors">ROI Calculator</a></li><li><a href="/about" class="hover:text-white transition-colors">About Us</a></li><li><a href="/register" class="hover:text-white transition-colors">Create Account</a></li></ul></div>
-                <div><h4 class="text-sm font-semibold text-white uppercase tracking-wider mb-4">Legal</h4><ul class="space-y-3 text-sm"><li><a href="/privacy-policy" class="hover:text-white transition-colors">Privacy Policy</a></li><li><a href="/terms-of-service" class="hover:text-white transition-colors">Terms of Service</a></li><li><a href="/risk-disclosure" class="hover:text-white transition-colors">Risk Disclosure</a></li><li><a href="/cookie-policy" class="hover:text-white transition-colors">Cookie Policy</a></li></ul></div>
-                <div><h4 class="text-sm font-semibold text-white uppercase tracking-wider mb-4">Countries</h4><ul class="space-y-3 text-sm"><li class="flex items-center gap-2"><img src="https://flagcdn.com/w40/us.png" alt="US" class="w-5 h-auto rounded-sm">United States</li><li class="flex items-center gap-2"><img src="https://flagcdn.com/w40/gb.png" alt="UK" class="w-5 h-auto rounded-sm">United Kingdom</li><li class="flex items-center gap-2"><img src="https://flagcdn.com/w40/ca.png" alt="CA" class="w-5 h-auto rounded-sm">Canada</li></ul></div>
-            </div>
-            <div class="border-t border-slate-800 py-8"><div class="flex flex-col md:flex-row items-center justify-between gap-4 text-sm"><p>&copy; 2026 XSpaceFinance. All rights reserved.</p><p class="text-slate-500 text-xs text-center md:text-right max-w-lg">All investments carry risk. Projected returns are based on stated rates and are not guaranteed. Past performance does not guarantee future results.</p></div></div>
-        </div>
-    </footer>
-
-    <script>
-        // Mobile menu
-        document.getElementById('mobile-menu-btn')?.addEventListener('click', function() {
-            var menu = document.getElementById('mobile-menu');
-            var openIcon = this.querySelector('.icon-open');
-            var closeIcon = this.querySelector('.icon-close');
-            menu.classList.toggle('hidden');
-            openIcon.classList.toggle('hidden');
-            closeIcon.classList.toggle('hidden');
-        });
-
-        // ===== PHONE SCREEN ROTATION =====
-        (function() {
-            const screens = document.querySelectorAll('.screen-slide');
-            const dots = document.querySelectorAll('.phone-dot');
-            let currentIndex = 0;
-            const total = screens.length;
-            let interval;
-
-            function goTo(index) {
-                if (index === currentIndex) return;
-                // Remove active from all
-                screens.forEach((s, i) => {
-                    s.classList.remove('active');
-                    s.classList.add('exit');
-                });
-                dots.forEach(d => d.classList.remove('active'));
-
-                // Show target
-                setTimeout(() => {
-                    screens.forEach(s => s.classList.remove('exit'));
-                    screens[index].classList.add('active');
-                    dots[index].classList.add('active');
-                    currentIndex = index;
-                }, 50);
-            }
-
-            function nextScreen() {
-                const next = (currentIndex + 1) % total;
-                goTo(next);
-            }
-
-            // Dot click handlers
-            dots.forEach((dot, idx) => {
-                dot.addEventListener('click', function() {
-                    clearInterval(interval);
-                    goTo(idx);
-                    interval = setInterval(nextScreen, 5000);
-                });
-            });
-
-            // Start rotation
-            screens.forEach((s, i) => {
-                if (i === 0) s.classList.add('active');
-                else s.classList.add('exit');
-            });
-            dots[0].classList.add('active');
-
-            interval = setInterval(nextScreen, 5000);
-        })();
-
-        // ===== CALCULATOR =====
-        document.addEventListener('DOMContentLoaded', function() {
-            var slider = document.getElementById('calc-amount');
-            var amountDisplay = document.getElementById('calc-amount-display');
-            var investedEl = document.getElementById('calc-invested');
-            var returnEl = document.getElementById('calc-return');
-            var profitEl = document.getElementById('calc-profit');
-            var buttons = document.querySelectorAll('.plan-select-btn');
-
-            if (!slider || !buttons.length) return;
-
-            var rate = parseFloat(buttons[0].dataset.rate) || 1;
-            var duration = parseFloat(buttons[0].dataset.duration) || 1;
-
-            function fmt(n) {
-                return '$' + Math.round(n).toLocaleString('en-US');
-            }
-
-            function calc() {
-                var p = parseInt(slider.value);
-                var r = rate / 100;
-                var n = duration;
-                var total = p * Math.pow(1 + r, n);
-                var profit = total - p;
-
-                amountDisplay.textContent = fmt(p);
-                investedEl.textContent = fmt(p);
-                returnEl.textContent = fmt(total);
-                profitEl.textContent = '+' + fmt(profit);
-            }
-
-            slider.addEventListener('input', calc);
-
-            buttons.forEach(function(btn) {
-                btn.addEventListener('click', function() {
-                    buttons.forEach(function(b) {
-                        b.classList.remove('bg-slate-900', 'text-white', 'border-slate-900');
-                        b.classList.add('bg-white', 'text-slate-600', 'border-slate-200');
-                    });
-                    this.classList.remove('bg-white', 'text-slate-600', 'border-slate-200');
-                    this.classList.add('bg-slate-900', 'text-white', 'border-slate-900');
-
-                    rate = parseFloat(this.dataset.rate);
-                    duration = parseFloat(this.dataset.duration);
-                    calc();
-                });
-            });
-
-            calc();
-        });
-    </script>
-
-</body>
-</html>
+module.exports = router;
