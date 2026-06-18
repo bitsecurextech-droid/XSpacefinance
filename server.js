@@ -1,3 +1,4 @@
+console.log('🔍 DATABASE_URL (first 30 chars):', process.env.DATABASE_URL?.slice(0, 30));
 require('dotenv').config();
 const express = require('express');
 const session = require('express-session');
