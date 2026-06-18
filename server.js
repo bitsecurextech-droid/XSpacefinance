@@ -1,10 +1,14 @@
 console.log('🔍 DATABASE_URL (first 30 chars):', process.env.DATABASE_URL?.slice(0, 30));
-console.log('🔍 DATABASE_URL length:', process.env.DATABASE_URL?.length);require('dotenv').config();
+console.log('🔍 DATABASE_URL length:', process.env.DATABASE_URL?.length);
+require('dotenv').config();
 console.log('🔍 DATABASE_URL:', process.env.DATABASE_URL?.replace(/:[^:@]*@/, ':***@'));
+
 const express = require('express');
 const session = require('express-session');
 const pgSession = require('connect-pg-simple')(session);
 const { Pool } = require('pg');
+const dns = require('dns').promises;
+const parse = require('pg-connection-string').parse;
 const path = require('path');
 const bcrypt = require('bcrypt');
 const crypto = require('crypto');
@@ -22,17 +26,40 @@ const adminRoutes = require('./routes/admin');
 const apiRoutes = require('./routes/api');
 
 // =============================================
-// 1. PostgreSQL connection pool for sessions
+// 1. PostgreSQL connection pool for sessions (IPv4 forced)
 // =============================================
-const pool = new Pool({
-  connectionString: process.env.DATABASE_URL,
-  ssl: { rejectUnauthorized: false } // required for Supabase
-});
+const config = parse(process.env.DATABASE_URL);
+let cachedIp = null;
+
+async function getIpv4Address(hostname) {
+  if (cachedIp) return cachedIp;
+  const lookup = await dns.lookup(hostname, { family: 4 });
+  cachedIp = lookup.address;
+  console.log(`✅ Resolved ${hostname} → ${cachedIp} (IPv4)`);
+  return cachedIp;
+}
+
+let sessionPool = null;
+async function getSessionPool() {
+  if (sessionPool) return sessionPool;
+  const ip = await getIpv4Address(config.host);
+  sessionPool = new Pool({
+    host: config.host,
+    hostaddr: ip,
+    port: parseInt(config.port, 10) || 5432,
+    database: config.database,
+    user: config.user,
+    password: config.password,
+    ssl: { rejectUnauthorized: false },
+  });
+  return sessionPool;
+}
 
 // =============================================
 // 2. Create session table (if not exists)
 // =============================================
 (async () => {
+  const pool = await getSessionPool();
   const client = await pool.connect();
   try {
     await client.query(`
@@ -72,11 +99,15 @@ uploadDirs.forEach(dir => {
 // =============================================
 // 4. Session store (PostgreSQL)
 // =============================================
-const sessionStore = new pgSession({
-  pool: pool,
-  tableName: 'session', // table name – must match the one we created
-  createTableIfMissing: false // we already created it above
-});
+let sessionStore;
+(async () => {
+  const pool = await getSessionPool();
+  sessionStore = new pgSession({
+    pool: pool,
+    tableName: 'session',
+    createTableIfMissing: false
+  });
+})();
 
 app.use(session({
   store: sessionStore,
@@ -194,11 +225,13 @@ if (process.env.NODE_ENV === 'production') {
 // =============================================
 process.on('SIGINT', async () => {
   console.log('🛑 Shutting down...');
+  const pool = await getSessionPool();
   await pool.end();
   process.exit(0);
 });
 process.on('SIGTERM', async () => {
   console.log('🛑 Shutting down...');
+  const pool = await getSessionPool();
   await pool.end();
   process.exit(0);
 });
